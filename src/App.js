@@ -10,8 +10,11 @@ import Box from '@mui/material/Box';
 
 // Local Components
 import Layout from './components/Layout/Layout';
-// import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import Notification from './pages/Notification';
+import Settings from './pages/Settings';
+import Devices from './pages/Devices';
+
 
 // Create a light and dark themes
 const lightTheme = createTheme({ palette: { mode: "light", },});
@@ -28,6 +31,9 @@ export default function App() {
                     <Route path='/' element={<Layout />} >
                         <Route index element={<Dashboard />} />
                         <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/notification" element={<Notification />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/devices" element={<Devices />} />
                     </Route>
                 </Routes>
             </HashRouter>
