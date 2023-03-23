@@ -180,7 +180,7 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
                         />
                     </Search> */}
                     <Box sx={{ flexGrow: 1 }} />
-                    <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+                    <Box sx={{ display: { xs: 'flex', md: 'flex' } }}>
                         <IconButton size="large" color="inherit" onClick={handleDarkMode}>
                             <Brightness4Icon />
                         </IconButton>
@@ -189,6 +189,7 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
                             aria-label="show 17 new notifications"
                             color="inherit"
                             component={Link} to="/notification"
+                            sx={{ display: { xs: 'none', md: 'block' } }}
                         >
                             <Badge badgeContent={17} color="error">
                                 <NotificationsIcon />
@@ -206,7 +207,7 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
                             <AccountCircle />
                         </IconButton>
                     </Box>
-                    <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+                    {/* <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
                         <IconButton
                             size="large"
                             aria-label="show more"
@@ -217,10 +218,9 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
                         >
                             <MoreIcon />
                         </IconButton>
-                    </Box>
+                    </Box> */}
                 </Toolbar>
             </StyledAppBar>
-            {renderMobileMenu}
             {renderMenu}
         </Box>
     );
