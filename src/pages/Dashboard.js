@@ -106,10 +106,10 @@ export default function Dashboard() {
 
     return (
         <Grid container spacing={4} alignItems="stretch" >
-            <Grid xs={6} md={8}>
+            <Grid xs={12} md={8}>
                 <MapCard/>
             </Grid>
-            <Grid xs={6} md={4}>
+            <Grid xs={12} md={4}>
                 <Card sx={{ height: 500, }}>
                     <CardContent>
                         <Typography gutterBottom variant="h5" component="div">
@@ -160,13 +160,13 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
             </Grid>
-            <Grid xs={6} md={4}>
+            <Grid xs={12} md={4}>
                 <BasicCard/>
             </Grid>
-            <Grid xs={6} md={4}>
+            <Grid xs={12} md={4}>
                 <BasicCard/>
             </Grid>
-            <Grid xs={6} md={4}>
+            <Grid xs={12} md={4}>
                 <BasicCard/>
             </Grid>
         </Grid>

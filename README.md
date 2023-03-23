@@ -1,3 +1,3 @@
-# GUI App
+# Raytheon Smart Rocks: GUI App
 
-Work in progress, expect nightly updates.
+Live demo: [https://codesandbox.io/s/github/SmartRocksProject/App](https://codesandbox.io/s/github/SmartRocksProject/App)
