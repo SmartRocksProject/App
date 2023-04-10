@@ -2,7 +2,6 @@
 // React
 import React from 'react';
 import { HashRouter, Routes, Route } from "react-router-dom";
-import { useLocalStorage } from '@rehooks/local-storage';
 
 // Material UI
 import { createTheme, ThemeProvider } from "@mui/material";
@@ -15,6 +14,9 @@ import Notification from './pages/Notification';
 import Settings from './pages/Settings';
 import Devices from './pages/Devices';
 
+// Local
+import { DataStoreContext } from './dataStore';
+
 
 // Create a light and dark themes
 const lightTheme = createTheme({ palette: { mode: "light", },});
@@ -22,7 +24,9 @@ const darkTheme = createTheme({ palette: { mode: "dark", },});
 
 // App Component
 export default function App() {
-    const [darkMode, setDarkMode, removeDarkMode] = useLocalStorage('darkMode', 'false');
+
+    // Get dark mode from data store
+    const { darkMode, setDarkMode } = React.useContext(DataStoreContext);
 
     return (
         <ThemeProvider theme={darkMode ? darkTheme : lightTheme }>

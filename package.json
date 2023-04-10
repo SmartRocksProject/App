@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor/core": "^4.7.1",
+    "@capacitor/preferences": "^4.0.2",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@fontsource/roboto": "^4.5.8",
+    "@meshtastic/meshtasticjs": "github:meshtastic/js",
     "@mui/icons-material": "^5.11.11",
     "@mui/material": "^5.11.12",
     "@rehooks/local-storage": "^2.4.4",
+    "@smartrocksproject/meshtasticjs": "github:SmartRocksProject/meshtasticjs",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -46,6 +50,7 @@
     ]
   },
   "devDependencies": {
+    "@capacitor/cli": "^4.7.1",
     "@types/leaflet": "^1.9.1"
   }
 }

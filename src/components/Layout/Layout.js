@@ -1,7 +1,6 @@
 
 // React
 import React from 'react';
-import { useLocalStorage } from '@rehooks/local-storage';
 import { Outlet, useNavigate  } from "react-router-dom";
 import { Link } from 'react-router-dom';
 
@@ -41,7 +40,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 // Local Components
 import AppBar from './Appbar';
-// import Drawer from './Sidebar';
+import { DataStoreContext } from '../../dataStore';
 
 
 // Create list of buttons for the sidebar
@@ -118,12 +117,14 @@ function ListComponent({ navButtons, open }) {
 export default function Layout({ children }) {
     const theme = useTheme();
     const isMD = useMediaQuery(theme.breakpoints.up('md'));
-    const [open, setOpen, removeOpen] = useLocalStorage('openDrawer');
+
+    const { openDrawer, setOpenDrawer } = React.useContext(DataStoreContext);
+
     const [value, setValue] = React.useState(0);
     const navigate = useNavigate();
 
     const toggleDrawer = () => {
-        setOpen(!open);
+        setOpenDrawer(!openDrawer);
     };
 
     // const [value, setValue] = React.useState(0);
@@ -136,34 +137,38 @@ export default function Layout({ children }) {
             <CssBaseline />
 
             {/* Appbar component */}
-            <AppBar position="fixed" open={open} handleDrawerToggle={toggleDrawer} navButtons={navButtons}/>
+            <AppBar 
+                position="fixed" 
+                open={openDrawer}
+                handleDrawerToggle={toggleDrawer}
+                // navButtons={navButtons}
+            />
 
             {/* Sidebar component */}
-            {/* <Drawer open={open} navButtons={navButtons}/> */}
             { isMD 
                 ? 
                 <Drawer 
                     variant="permanent" 
-                    open={open} 
-                    // sx={{ width: open ? drawerWidthOpen : drawerWidthClosed , }}
-                    PaperProps={{ style: { width: open ? drawerWidthOpen : drawerWidthClosed } }}
+                    open={openDrawer} 
+                    // sx={{ width: openDrawer ? drawerWidthOpen : drawerWidthClosed , }}
+                    PaperProps={{ style: { width: openDrawer ? drawerWidthOpen : drawerWidthClosed } }}
                 >
-                    <ListComponent navButtons={navButtons} open={open} />
+                    <ListComponent navButtons={navButtons} open={openDrawer} />
                 </Drawer>
                 :    
                 <SwipeableDrawer
-                    anchor='left'
-                    open={open}
+                    anchor="left"
+                    open={openDrawer}
                     onClose={toggleDrawer}
-                    // sx={{ width: drawerWidth, }}
-                    PaperProps={{ style: { width: open ? drawerWidthOpen : drawerWidthClosed } }}
+                    onOpen={toggleDrawer}
+                    PaperProps={{ style: { width: openDrawer ? drawerWidthOpen : drawerWidthClosed } }}
                 >
-                    <ListComponent navButtons={navButtons} open={open} />
+                    <ListComponent navButtons={navButtons} open={openDrawer} />
                 </SwipeableDrawer>
             }
 
             {/* Main page content goes here */}
-            <Box sx={{ mt: 10, ml: isMD ? ( open ? 30 : 10 ) : 0 }}>
+            <Box sx={{ mt: 10, ml: isMD ? ( openDrawer ? 30 : 10 ) : 0 }}>
                 <Outlet />
             </Box>
 

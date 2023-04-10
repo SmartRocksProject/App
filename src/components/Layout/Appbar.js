@@ -1,7 +1,6 @@
 
 // React
 import React from 'react';
-import { writeStorage, useLocalStorage } from '@rehooks/local-storage';
 import { Link } from 'react-router-dom';
 
 // Material UI
@@ -26,6 +25,7 @@ import MoreIcon from '@mui/icons-material/MoreVert';
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 
 // Local Components
+import { DataStoreContext } from '../../dataStore';
 
 
 // AppBar Styled Component
@@ -47,7 +47,9 @@ const StyledAppBar = styled(AppBar, {shouldForwardProp: (prop) => prop !== 'open
 
 // PrimaryAppBar Component
 export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
-    const [darkMode, setDarkMode, removeDarkMode] = useLocalStorage('darkMode', 'false');
+
+    const { darkMode, setDarkMode } = React.useContext(DataStoreContext);
+
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
     const isMenuOpen = Boolean(anchorEl);
