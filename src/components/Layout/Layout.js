@@ -1,7 +1,7 @@
 
 // React
 import React from 'react';
-import { Outlet, useNavigate  } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 
 // Material UI
@@ -40,6 +40,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 // Local Components
 import AppBar from './Appbar';
+import AddDeviceDialog from '../Dialog/addDeviceDialog';
 import { DataStoreContext } from '../../dataStore';
 
 
@@ -69,6 +70,15 @@ const navButtons = [
 
 // The List Components 
 function ListComponent({ navButtons, open }) {
+
+    // Get data store
+    const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
+
+    // Handle Add Button
+    const handleAddButton = () => {
+        setOpenDeviceDialog(true);
+    }
+
     return (
         <List>
             <Divider sx={{ mt: 7.5, }} />
@@ -95,7 +105,7 @@ function ListComponent({ navButtons, open }) {
             <Divider />
 
             <ListItem disablePadding sx={{ display: 'block' }}>
-                <ListItemButton sx={{
+                <ListItemButton onClick={handleAddButton} sx={{
                     minHeight: 48, justifyContent: open ? 'initial' : 'center', px: 2.5,
                 }}>
                     <ListItemIcon sx={{
@@ -163,7 +173,7 @@ export default function Layout({ children }) {
                     onOpen={toggleDrawer}
                     PaperProps={{ style: { width: openDrawer ? drawerWidthOpen : drawerWidthClosed } }}
                 >
-                    <ListComponent navButtons={navButtons} open={openDrawer} />
+                    <ListComponent navButtons={navButtons} open={openDrawer}/>
                 </SwipeableDrawer>
             }
 
@@ -187,6 +197,10 @@ export default function Layout({ children }) {
                     ))}
                 </BottomNavigation>
             </Paper>
+
+            {/* Add Device Dialog */}
+            <AddDeviceDialog />
+
         </Box>
     );
 }

@@ -7,11 +7,34 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
 
+// Log data structure
+const Log = {
+    id: 0,
+    device: null,
+    GPS: {
+        lat: 0,
+        lon: 0,
+        alt: 0,
+    },
+    unixTimeStamp: 0,
+    DetectionType: '',
+};
+
+// Device data structure
+const Device = {
+    id: 0,
+    name: '',
+    BleDevice: null,
+    isConnected: false,
+    isDemo: false,
+};
+
+
 // Create data store context
-const DataStoreContext = createContext();
+export const DataStoreContext = createContext();
 
 // Create data store provider
-const DataStoreProvider = ({ children }) => {
+export const DataStoreProvider = ({ children }) => {
 
     // State to store dark/light mode
     const [darkMode, setDarkMode] = useState(false);
@@ -20,8 +43,10 @@ const DataStoreProvider = ({ children }) => {
     const theme = useTheme();
     const isMD = useMediaQuery(theme.breakpoints.up('md'));
     const [openDrawer, setOpenDrawer] = useState(isMD ? true : false);
+    const [openDeviceDialog, setOpenDeviceDialog] = useState(false);
 
     // State to store ble devices
+    const [deviceList, setDeviceList] = useState([]);
     const [bleDevices, setBleDevices] = useState([]);
 
     // State to store active connection
@@ -33,35 +58,10 @@ const DataStoreProvider = ({ children }) => {
             openDrawer, setOpenDrawer,
             bleDevices, setBleDevices,
             activeConnection, setActiveConnection,
+            openDeviceDialog, setOpenDeviceDialog,
         }}>
             {children}
         </DataStoreContext.Provider>
     );
 };
 
-// Create data store hook
-const useDataStoreContext = () => {
-    const context = useContext(DataStoreContext);
-
-    if (!context) {
-        throw new Error('useDataStoreContext must be used within a DataStoreProvider');
-    }
-
-    const { bleDevices, setBleDevices, activeConnection, setActiveConnection } = context;
-
-    return {
-        bleDevices,
-        setBleDevices,
-        activeConnection,
-        setActiveConnection,
-    };
-};
-
-
-
-// Exports
-export {
-    DataStoreContext,
-    DataStoreProvider,
-    useDataStoreContext,
-};
