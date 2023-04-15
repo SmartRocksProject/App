@@ -8,7 +8,7 @@ import { useTheme } from '@mui/material/styles';
 
 
 // Log data structure
-const Log = {
+export const Log = {
     id: 0,
     device: null,
     GPS: {
@@ -21,12 +21,18 @@ const Log = {
 };
 
 // Device data structure
-const Device = {
+export const Device = {
     id: 0,
     name: '',
     BleDevice: null,
     isConnected: false,
-    isDemo: false,
+    isSimulation: false,
+    GPS: {
+        lat: 0,
+        lon: 0,
+        alt: 0,
+    },
+    logFile: "",
 };
 
 
@@ -59,6 +65,7 @@ export const DataStoreProvider = ({ children }) => {
             bleDevices, setBleDevices,
             activeConnection, setActiveConnection,
             openDeviceDialog, setOpenDeviceDialog,
+            deviceList, setDeviceList,
         }}>
             {children}
         </DataStoreContext.Provider>

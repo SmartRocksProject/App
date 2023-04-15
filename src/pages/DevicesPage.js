@@ -12,124 +12,75 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 
 // Local
 import { DataStoreContext } from '../dataStore';
+import { onConnect, requestNewDevice, randId, handleXModemOperation } from '../util';
 import DeviceCard from '../components/Card/DeviceCard';
 
 
-// Generate a random ID
-const randId = () => {
-    return Math.floor(Math.random() * 1e9);
-};
+// // Generate a random ID
+// const randId = () => {
+//     return Math.floor(Math.random() * 1e9);
+// };
 
 // Devices Page Component
 export default function DevicesPage() {
 
+    // Get data store context
+    const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
+    const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
+
     const { bleDevices, setBleDevices } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
 
-    console.log('bleDevices:', bleDevices);
+    // console.log('deviceList', deviceList);
 
-    // Connect to a BLE device
-    const onConnect = async (BLEDevice) => {
-        const id = randId();
-        const connection = new IBLEConnection(id);
-        try {
-            await connection.connect({
-                device: BLEDevice,
-            });
-            console.log('Connected to', BLEDevice.name);
-            setActiveConnection(connection);
-        } catch (error) {
-            console.error('Failed to connect:', error);
-        }
+    // Open the device dialog
+    const handleOpenDeviceDialog = () => {
+        setOpenDeviceDialog(true);
     };
-
-    // Use XModem to download a file
-    const handleXModemOperation = async () => {
-        if (activeConnection) {
-            const xmodem = activeConnection.XModem;
-            try {
-                const filename = '/Masterfile.txt'; // Replace with the desired filename
-                const result = await xmodem.downloadFile(filename);
-                console.log(`XModem downloadFile result: ${result}`);
-            } catch (error) {
-                console.error('Error using XModem downloadFile:', error);
-            }
-        } else {
-            console.error('No active connection');
-        }
-    };
-
-    // Request a new BLE device
-    const requestNewDevice = async () => {
-        try {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: [Constants.serviceUUID] }],
-            });
-
-            setBleDevices((prevDevices) => [...prevDevices, device]);
-        } catch (error) {
-            console.error('Error requesting new device:', error);
-        }
-    };
-
-
-    return (
-        <Box >
-            <Typography variant="h5" sx={{p: 2}}>Paired BLE Devices</Typography>
-            <Stack spacing={2} width="100%" >
-                {bleDevices.map((device, index) => (
-                    <>
-                    <DeviceCard device={device} onConnect={onConnect} key={index}/>
-                    <DeviceCard device={device} onConnect={onConnect} key={index}/></>
-                ))}
-            </Stack>
-            {bleDevices.length === 0 && (
-                <Typography variant="body1">No devices paired yet.</Typography>
-            )}
-            <Box mt={2}>
-                <Button variant="contained" color="primary" onClick={requestNewDevice}>
-                    Add New Device
-                </Button>
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleXModemOperation}
-                    disabled={!activeConnection}
-                >
-                    Use XModem
-                </Button>
-            </Box>
-        </Box>
-    );
 
     return (
         <Box>
-            <Typography variant="h5">Paired BLE Devices</Typography>
+            <Typography variant="h5" sx={{p: 2}}>Paired BLE Devices</Typography>
             <Grid container spacing={2}>
-                {bleDevices.map((device, index) => (
-                    <Grid item xs={12} sm={6} md={4} key={index}>
-                        <DeviceCard device={device} onConnect={onConnect} />
+                {deviceList.map((device, index) => (
+                    <Grid item xs={12} sm={12} md={12} key={index}>
+                        <DeviceCard device={device} onClick={() => onConnect(device, setActiveConnection)} />
                     </Grid>
                 ))}
+                {deviceList.length === 0 && (
+                    <Grid item xs={12} sm={12} md={12}>
+                        <Card
+                            sx={{
+                                border: '1px dashed gray', // Add a gray dashed border
+                                background: 'rgba(0, 0, 0, 0.05)', // Add a light gray background color
+                            }}
+                        >
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom>
+                                    No devices paired. Click the button below to add a real or simulated device.
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                )}
             </Grid>
-            {bleDevices.length === 0 && (
-                <Typography variant="body1">No devices paired yet.</Typography>
-            )}
             <Box mt={2}>
-                <Button variant="contained" color="primary" onClick={requestNewDevice}>
+                <Button variant="contained" color="primary" onClick={handleOpenDeviceDialog}>
                     Add New Device
                 </Button>
-                <Button
+                {/* <Button
                     variant="contained"
                     color="secondary"
-                    onClick={handleXModemOperation}
+                    onClick={() => handleXModemOperation(activeConnection)}
                     disabled={!activeConnection}
                 >
                     Use XModem
-                </Button>
+                </Button> */}
             </Box>
         </Box>
     );

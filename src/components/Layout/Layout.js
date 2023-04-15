@@ -81,7 +81,8 @@ function ListComponent({ navButtons, open }) {
 
     return (
         <List>
-            <Divider sx={{ mt: 7.5, }} />
+            {/* <Divider sx={{ mt: 8, }} /> */}
+            <Box sx={{pt: 8,}}/>
 
             {navButtons.map((item, index) => (
                 <ListItem disablePadding sx={{ display: 'block' }} key={index}>
@@ -102,7 +103,7 @@ function ListComponent({ navButtons, open }) {
                 </ListItem>
             ))}
 
-            <Divider />
+            {/* <Divider />
 
             <ListItem disablePadding sx={{ display: 'block' }}>
                 <ListItemButton onClick={handleAddButton} sx={{
@@ -117,7 +118,7 @@ function ListComponent({ navButtons, open }) {
                     </ListItemIcon>
                     <ListItemText primary={"Connect"} sx={{ opacity: open ? 1 : 0 }} />
                 </ListItemButton>
-            </ListItem>
+            </ListItem> */}
 
         </List>
     );
@@ -143,7 +144,7 @@ export default function Layout({ children }) {
     const drawerWidthClosed = 60;
 
     return (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 4 }}>
             <CssBaseline />
 
             {/* Appbar component */}
