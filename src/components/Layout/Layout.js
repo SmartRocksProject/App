@@ -3,6 +3,7 @@
 import React from 'react';
 import { Outlet, useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
+import { SnackbarProvider, useSnackbar } from 'notistack';
 
 // Material UI
 import { useTheme } from '@mui/material/styles';
@@ -145,6 +146,8 @@ export default function Layout({ children }) {
 
     return (
         <Box sx={{ p: 4 }}>
+            <SnackbarProvider maxSnack={3}>
+
             <CssBaseline />
 
             {/* Appbar component */}
@@ -202,6 +205,7 @@ export default function Layout({ children }) {
             {/* Add Device Dialog */}
             <AddDeviceDialog />
 
+            </SnackbarProvider>
         </Box>
     );
 }

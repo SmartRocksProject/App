@@ -26,8 +26,9 @@ import TextField from '@mui/material/TextField';
 import AddIcon from '@mui/icons-material/Add';
 
 // Local
-import { DataStoreContext, Device } from '../../dataStore';
+import { DataStoreContext, Device, Log } from '../../dataStore';
 import { onConnect, requestNewDevice, randId } from '../../util';
+import { Stack } from '@mui/system';
 
 
 // AddDeviceDialog Component
@@ -61,7 +62,7 @@ export default function AddDeviceDialog({ ...props }) {
         } 
 
         // Handle simulation device form submission
-        else if (deviceType === 'simulation') {
+        else if (deviceType === 'simulated') {
             if (simulatedDevice.name === '') return false;
             else {
                 return true;
@@ -81,21 +82,22 @@ export default function AddDeviceDialog({ ...props }) {
             const newDevice = {
                 ...Device,
                 id: deviceList.length + 1,
-                isSimulation: false,
+                deviceType: 'real',
                 BleDevice: bleDevices[0],
                 name: bleDevices[0].name,
+                connection: onConnect(bleDevices[0]),
             };
 
             // Add the new device to the device list
             setDeviceList((prevDevices) => [...prevDevices, newDevice]);
             setBleDevices([]);
             
-        } else if (deviceType === 'simulation') {
+        } else if (deviceType === 'simulated') {
             // Handle simulation device form submission
             const newDevice = {
                 ...simulatedDevice,
                 id: deviceList.length + 1,
-                isSimulation: true,
+                deviceType: 'simulated',
             };
 
             // Add the new device to the device list
@@ -137,7 +139,7 @@ export default function AddDeviceDialog({ ...props }) {
                         </Tooltip>
                         <Tooltip title="Add a simulated device for testing UI">
                             <FormControlLabel
-                                value="simulation"
+                                value="simulated"
                                 control={<Radio />}
                                 label="Simulation"
                             />
@@ -186,7 +188,7 @@ export default function AddDeviceDialog({ ...props }) {
                         </List>
                     </Box>
                 )}
-                {deviceType === 'simulation' && (
+                {deviceType === 'simulated' && (
                     <Box
                         id="simulation-form" // Add the id attribute
                         component="form"
@@ -202,56 +204,53 @@ export default function AddDeviceDialog({ ...props }) {
                         <DialogContentText sx={{mb: 2,}}>
                             Add a simulated device (for testing purposes):
                         </DialogContentText>
-                        <FormControl>
+                        <Stack spacing={2}>
                             <Tooltip title="Enter the device name">
                                 <TextField
                                     label="Device Name"
                                     value={simulatedDevice.name}
-                                    onChange={(e) => setSimulatedDevice({...simulatedDevice, name: e.target.value})}
-                                    sx={{ mb: 2 }}
+                                    onChange={(e) => setSimulatedDevice({ ...simulatedDevice, name: e.target.value })}
                                     required={true}
                                 />
                             </Tooltip>
-                            <Tooltip title="Enter the GPS latitude">
-                                <TextField
-                                    label="GPS Latitude"
-                                    type="number"
-                                    value={simulatedDevice.GPS.lat}
-                                    onChange={(e) => setSimulatedDevice({...simulatedDevice, GPS: {...simulatedDevice.GPS, lat: parseFloat(e.target.value)}})}
-                                    sx={{ mb: 2 }}
-                                    required={true}
-                                />
-                            </Tooltip>
-                            <Tooltip title="Enter the GPS longitude">
-                                <TextField
-                                    label="GPS Longitude"
-                                    type="number"
-                                    value={simulatedDevice.GPS.lon}
-                                    onChange={(e) => setSimulatedDevice({ ...simulatedDevice, GPS: { ...simulatedDevice.GPS, lon: parseFloat(e.target.value) } })}
-                                    sx={{ mb: 2 }}
-                                    required={true}
-                                />
-                            </Tooltip>
-                            <Tooltip title="Enter the GPS altitude">
-                                <TextField
-                                    label="GPS Altitude"
-                                    type="number"
-                                    value={simulatedDevice.GPS.alt}
-                                    onChange={(e) => setSimulatedDevice({ ...simulatedDevice, GPS: { ...simulatedDevice.GPS, alt: parseFloat(e.target.value) } })}
-                                    sx={{ mb: 2 }}
-                                    required={true}
-                                />
-                            </Tooltip>
+                            <Stack direction="row" spacing={2}>
+                                <Tooltip title="Enter the GPS latitude">
+                                    <TextField
+                                        label="GPS Latitude"
+                                        type="number"
+                                        value={simulatedDevice.GPS.lat}
+                                        onChange={(e) => setSimulatedDevice({ ...simulatedDevice, GPS: { ...simulatedDevice.GPS, lat: parseFloat(e.target.value) } })}
+                                        required={true}
+                                    />
+                                </Tooltip>
+                                <Tooltip title="Enter the GPS longitude">
+                                    <TextField
+                                        label="GPS Longitude"
+                                        type="number"
+                                        value={simulatedDevice.GPS.lon}
+                                        onChange={(e) => setSimulatedDevice({ ...simulatedDevice, GPS: { ...simulatedDevice.GPS, lon: parseFloat(e.target.value) } })}
+                                        required={true}
+                                    />
+                                </Tooltip>
+                                <Tooltip title="Enter the GPS altitude">
+                                    <TextField
+                                        label="GPS Altitude"
+                                        type="number"
+                                        value={simulatedDevice.GPS.alt}
+                                        onChange={(e) => setSimulatedDevice({ ...simulatedDevice, GPS: { ...simulatedDevice.GPS, alt: parseFloat(e.target.value) } })}
+                                        required={true}
+                                    />
+                                </Tooltip>
+                            </Stack>
                             <Tooltip title="Enter the log file content">
                                 <TextField
                                     label="Log File"
                                     multiline
                                     value={simulatedDevice.logFile}
                                     onChange={(e) => setSimulatedDevice({...simulatedDevice, logFile: e.target.value})}
-                                    sx={{ mb: 2 }}
                                 />
                             </Tooltip>
-                        </FormControl>
+                        </Stack>
                     </Box>
                 )}
             </DialogContent>
@@ -261,7 +260,7 @@ export default function AddDeviceDialog({ ...props }) {
                 </Button>
                 <Button 
                     type="submit" 
-                    form={deviceType === 'simulation' ? 'simulation-form' : 'real-form'} 
+                    form={deviceType === 'simulated' ? 'simulation-form' : 'real-form'} 
                     variant="contained" 
                     color="primary"
                     disabled={!isSubmitEnabled()}

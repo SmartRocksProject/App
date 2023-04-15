@@ -1,7 +1,7 @@
 
 // React
 import React from 'react';
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Outlet } from "react-router-dom";
 import grey from '@mui/material/colors/grey';
 
 // Material UI
@@ -14,6 +14,7 @@ import DashboardPage from './pages/DashboardPage';
 import NotificationPage from './pages/NotificationPage';
 import SettingsPage from './pages/SettingsPage';
 import DevicesPage from './pages/DevicesPage';
+import DeviceDetailsPage from './pages/DeviceDetailsPage';
 
 // Local
 import { DataStoreContext } from './dataStore';
@@ -50,6 +51,7 @@ export default function App() {
                         <Route path="/notification" element={<NotificationPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/devices" element={<DevicesPage />} />
+                        <Route path="/devices/:id" element={<DeviceDetailsPage />} />
                     </Route>
                 </Routes>
             </HashRouter>

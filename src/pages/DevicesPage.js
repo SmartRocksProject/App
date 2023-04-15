@@ -14,6 +14,11 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip'
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/Apps';
 
 // Local
 import { DataStoreContext } from '../dataStore';
@@ -33,10 +38,8 @@ export default function DevicesPage() {
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
 
-    const { bleDevices, setBleDevices } = React.useContext(DataStoreContext);
-    const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
-
-    // console.log('deviceList', deviceList);
+    // Local state
+    const [viewMode, setViewMode] = React.useState('list');
 
     // Open the device dialog
     const handleOpenDeviceDialog = () => {
@@ -45,15 +48,29 @@ export default function DevicesPage() {
 
     return (
         <Box>
-            <Typography variant="h5" sx={{p: 2}}>Paired BLE Devices</Typography>
+            <Box sx={{ display: 'flex', p: 2, alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ flexGrow: 1, }}>
+                    Paired BLE Devices
+                </Typography>
+                <Tooltip title="Switch view from grid/list">
+                    <IconButton onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}>
+                        {viewMode === 'list' ? (
+                            <ViewModuleIcon sx={{ fontSize: 35 }} />
+                        ) : (
+                            <ViewListIcon sx={{ fontSize: 35 }} />
+                        )}
+                    </IconButton>
+                </Tooltip>
+            </Box>
+
             <Grid container spacing={2}>
                 {deviceList.map((device, index) => (
-                    <Grid item xs={12} sm={12} md={12} key={index}>
-                        <DeviceCard device={device} onClick={() => onConnect(device, setActiveConnection)} />
+                    <Grid item xs={12} sm={viewMode === 'list' ? 12 : 6} md={viewMode === 'list' ? 12 : 4} key={index}>
+                        <DeviceCard device={device} index={index} />
                     </Grid>
                 ))}
                 {deviceList.length === 0 && (
-                    <Grid item xs={12} sm={12} md={12}>
+                    <Grid item xs={12} sm={viewMode === 'list' ? 6 : 12} md={viewMode === 'list' ? 12 : 4}>
                         <Card
                             sx={{
                                 border: '1px dashed gray', // Add a gray dashed border

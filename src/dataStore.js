@@ -25,8 +25,9 @@ export const Device = {
     id: 0,
     name: '',
     BleDevice: null,
+    connection: null,
     isConnected: false,
-    isSimulation: false,
+    deviceType: '', // 'real' or 'simulated'
     GPS: {
         lat: 0,
         lon: 0,
