@@ -34,6 +34,39 @@ export default function DeviceCard({ device, index, ...props }) {
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
+    // Get GPS message
+    function getGPSMessage() {
+        const deviceLogsForId = device.logData.filter((log) => log.deviceId === device.name);
+
+        if (deviceLogsForId.length > 0) {
+            const latestLog = deviceLogsForId[deviceLogsForId.length - 1];
+            const { latitude, longitude } = latestLog;
+            const latString = `${latitude.degrees}° ${latitude.minutes}' ${latitude.seconds}" ${latitude.cardinalPoint}`;
+            const lonString = `${longitude.degrees}° ${longitude.minutes}' ${longitude.seconds}" ${longitude.cardinalPoint}`;
+            return `${latString}, ${lonString}`;
+        } else {
+            return `Unknown`;
+        }
+    }
+
+    // get detection message
+    const getDetectionMessage = () => {
+        let detectionMessage = null;
+        if (device.logData[0].detectionType === "S") {
+            detectionMessage = 'Human Seismic Activity Detected!';
+        }
+        else if (device.logData[0].detectionType === "V") {
+            detectionMessage = 'Human Vibration Activity Detected!';
+        }
+        else if (device.logData[0].detectionType === "B") {
+            detectionMessage = 'Battery Levels Low!';
+        }
+        else {
+            detectionMessage = null;
+        }
+        return detectionMessage;
+    }
+    
     // Connect to the device
     const onConnect = async () => {
 
@@ -134,10 +167,10 @@ export default function DeviceCard({ device, index, ...props }) {
                     </Typography>
                 </Link>
                 <Typography variant="body2" color="text.secondary">
-                    • GPS: {device.GPS.lat}, {device.GPS.lon}, {device.GPS.alt}
+                    • GPS: {getGPSMessage()}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    • Last log message: {device.logFile}
+                    • Last log message: {getDetectionMessage()}
                 </Typography>
             </CardContent>
             <CardActions>

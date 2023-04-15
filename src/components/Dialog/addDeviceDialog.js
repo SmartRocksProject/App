@@ -26,7 +26,7 @@ import TextField from '@mui/material/TextField';
 import AddIcon from '@mui/icons-material/Add';
 
 // Local
-import { DataStoreContext, Device, Log } from '../../dataStore';
+import { DataStoreContext, Device, Log, parseLogData } from '../../dataStore';
 import { onConnect, requestNewDevice, randId } from '../../util';
 import { Stack } from '@mui/system';
 
@@ -98,6 +98,8 @@ export default function AddDeviceDialog({ ...props }) {
                 ...simulatedDevice,
                 id: deviceList.length + 1,
                 deviceType: 'simulated',
+                logFile: simulatedDevice.logFile,
+                logData: parseLogData(simulatedDevice.logFile),
             };
 
             // Add the new device to the device list
@@ -213,7 +215,7 @@ export default function AddDeviceDialog({ ...props }) {
                                     required={true}
                                 />
                             </Tooltip>
-                            <Stack direction="row" spacing={2}>
+                            {/* <Stack direction="row" spacing={2}>
                                 <Tooltip title="Enter the GPS latitude">
                                     <TextField
                                         label="GPS Latitude"
@@ -241,7 +243,7 @@ export default function AddDeviceDialog({ ...props }) {
                                         required={true}
                                     />
                                 </Tooltip>
-                            </Stack>
+                            </Stack> */}
                             <Tooltip title="Enter the log file content">
                                 <TextField
                                     label="Log File"

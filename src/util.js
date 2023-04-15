@@ -50,3 +50,4 @@ export const requestNewDevice = async (setDevices) => {
         console.error('Error requesting new device:', error);
     }
 };
+

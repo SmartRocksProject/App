@@ -70,7 +70,7 @@ export default function DevicesPage() {
                     </Grid>
                 ))}
                 {deviceList.length === 0 && (
-                    <Grid item xs={12} sm={viewMode === 'list' ? 6 : 12} md={viewMode === 'list' ? 12 : 4}>
+                    <Grid item xs={12} sm={viewMode === 'list' ? 12 : 6} md={viewMode === 'list' ? 12 : 4}>
                         <Card
                             sx={{
                                 border: '1px dashed gray', // Add a gray dashed border
