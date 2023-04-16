@@ -24,11 +24,11 @@ import RadioGroup from '@mui/material/RadioGroup';
 import Tooltip from '@mui/material/Tooltip';
 import TextField from '@mui/material/TextField';
 import AddIcon from '@mui/icons-material/Add';
+import Stack from '@mui/material/Stack';
 
 // Local
 import { DataStoreContext, Device, Log, parseLogData } from '../../dataStore';
 import { onConnect, requestNewDevice, randId } from '../../util';
-import { Stack } from '@mui/system';
 
 
 // AddDeviceDialog Component
