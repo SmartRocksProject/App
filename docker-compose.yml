@@ -10,5 +10,3 @@ services:
         environment:
             DOCKER: "true"
         command: [ "npm", "start" ]
-        volumes:
-            - .:/app
