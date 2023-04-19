@@ -27,7 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import Stack from '@mui/material/Stack';
 
 // Local
-import { DataStoreContext, Device, Log, parseLogData } from '../../dataStore';
+import { DataStoreContext, Device, LogEvent, parseLogFile } from '../../dataStore';
 import { onConnect, requestNewDevice, randId } from '../../util';
 
 
@@ -77,15 +77,19 @@ export default function AddDeviceDialog({ ...props }) {
     const handleFormSubmit = (event) => {
         event.preventDefault();
 
+        // Handle real device form submission
         if (deviceType === 'real') {
-            // Handle real device form submission
+
+            // Create a new device object
             const newDevice = {
                 ...Device,
                 id: deviceList.length + 1,
-                deviceType: 'real',
-                BleDevice: bleDevices[0],
                 name: bleDevices[0].name,
-                connection: onConnect(bleDevices[0]),
+                BleDevice: bleDevices[0],
+                connection: bleDevices[0].connection,
+                isReal: true,
+                isConnected: false,
+                logFile: 'No log file downloaded.',
                 logData: [],
             };
 
@@ -98,9 +102,9 @@ export default function AddDeviceDialog({ ...props }) {
             const newDevice = {
                 ...simulatedDevice,
                 id: deviceList.length + 1,
-                deviceType: 'simulated',
-                logFile: simulatedDevice.logFile,
-                logData: parseLogData(simulatedDevice.logFile),
+                isReal: false,
+                isConnected: false,
+                logData: parseLogFile(simulatedDevice.logFile),
             };
 
             // Add the new device to the device list

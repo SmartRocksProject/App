@@ -2,6 +2,7 @@
 // React 
 import React from 'react';
 import { Constants, IBLEConnection } from '@smartrocksproject/meshtasticjs';
+import { useSnackbar } from 'notistack';
 
 // Material UI
 import Box from '@mui/material/Box';
@@ -26,17 +27,15 @@ import { onConnect, requestNewDevice, randId, handleXModemOperation } from '../u
 import DeviceCard from '../components/Card/DeviceCard';
 
 
-// // Generate a random ID
-// const randId = () => {
-//     return Math.floor(Math.random() * 1e9);
-// };
 
 // Devices Page Component
 export default function DevicesPage() {
 
     // Get data store context
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
+    const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
     // Local state
     const [viewMode, setViewMode] = React.useState('list');
@@ -46,31 +45,167 @@ export default function DevicesPage() {
         setOpenDeviceDialog(true);
     };
 
+    // Connect to the device
+    const handleConnect = async (device, index) => {
+
+        // Generate a random ID
+        const id = randId();
+
+        // Create a new connection
+        const connection = new IBLEConnection(id);
+
+        // Attempt to connect to the device
+        try {
+
+            // Connect to the device
+            await connection.connect({ device: device.BLEDevice, });
+            console.log('Connected to', device.BLEDevice);
+
+            // Set the active connection
+            setActiveConnection(connection);
+
+            // Show the device as connected
+            setDeviceList((prev) => {
+
+                // Copy the array
+                const newDevices = [...prev];
+
+                // Set all other devices as disconnected
+                newDevices.forEach((device) => {
+                    device.isConnected = false;
+                });
+
+                // Set the device as connected
+                newDevices[index].isConnected = true;
+
+                // Return the new array
+                return newDevices;
+            });
+
+            // Open the snackbar
+            enqueueSnackbar('The device has successfully connected!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+
+        } catch (error) {
+            // Show the error
+            console.error('Failed to connect:', error);
+            enqueueSnackbar('Failed to connect to the device!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+        }
+    };
+
+    // Use XModem to download a file
+    const handleDownloadFile = async () => {
+
+        // Check if there is an active connection
+        if (activeConnection) {
+
+            // Get the XModem object
+            const xmodem = activeConnection.XModem;
+            try {
+
+                // Download the file
+                const filename = '/Masterfile.txt'; // Replace with the desired filename
+                const result = await xmodem.downloadFile(filename);
+                console.log(`XModem downloadFile result: ${result}`);
+
+                // Save the file result to the device
+                setDeviceList((prev) => {
+                    
+                    // Copy the array
+                    const newDevices = [...prev];
+
+                    // Find the device
+                    const device = newDevices.find((device) => device.isConnected);
+
+                    // Save the file result
+                    device.logFile = result;
+
+                    // Return the new array
+                    return newDevices;
+                });
+
+                // Open the snackbar
+                enqueueSnackbar('The file has successfully downloaded!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+
+            } catch (error) {
+                console.error('Error using XModem downloadFile:', error);
+                enqueueSnackbar('Failed to download the file!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+            }
+        } else {
+            console.error('No active connection');
+            enqueueSnackbar('No active connection!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+        }
+    };
+
+    // Handle the delete button
+    const handleDelete = (device, index) => {
+        setDeviceList((prev) => {
+            const newDevices = [...prev];
+            newDevices.splice(index, 1);
+            return newDevices;
+        });
+
+        // Alert the user
+        enqueueSnackbar('The device has been removed!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+    };
+
+    
+    // Determine if connect button should be shown
+    const showConnectButton = (device) => {
+        
+        // If this is a real device
+        if (device.isReal) {
+
+            // If the device is not connected
+            if (!device.isConnected) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // Otherwise, return false
+        return false;
+    };
+
+    // Determine if download button should be shown
+    const showDownloadButton = (device) => {
+        
+        // If this is a real device
+        if (device.isReal) {
+
+            // If the device is connected
+            if (device.isConnected) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // Otherwise, return false
+        return false;
+    };
+
     return (
         <Box>
-            <Box sx={{ display: 'flex', p: 2, alignItems: 'center' }}>
-                <Typography variant="h6" sx={{ flexGrow: 1, }}>
-                    Paired BLE Devices
-                </Typography>
-                <Tooltip title="Switch view from grid/list">
-                    <IconButton onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}>
-                        {viewMode === 'list' ? (
-                            <ViewModuleIcon sx={{ fontSize: 35 }} />
-                        ) : (
-                            <ViewListIcon sx={{ fontSize: 35 }} />
-                        )}
-                    </IconButton>
-                </Tooltip>
-            </Box>
+            <Typography variant="h6" sx={{ p: 2 }}>
+                Paired BLE Devices
+            </Typography>
 
             <Grid container spacing={2}>
                 {deviceList.map((device, index) => (
-                    <Grid item xs={12} sm={viewMode === 'list' ? 12 : 6} md={viewMode === 'list' ? 12 : 4} key={index}>
-                        <DeviceCard device={device} index={index} />
+                    <Grid item xs={12} key={index}>
+                        <DeviceCard
+                            device={device}
+                            handleConnect={() => handleConnect(device, index)}
+                            handleDownloadFile={() => handleDownloadFile()}
+                            handleDelete={() => handleDelete(device, index)}
+                            showConnectButton={showConnectButton(device)}
+                            showDownloadButton={showDownloadButton(device)}
+                        />
                     </Grid>
                 ))}
                 {deviceList.length === 0 && (
-                    <Grid item xs={12} sm={viewMode === 'list' ? 12 : 6} md={viewMode === 'list' ? 12 : 4}>
+                    <Grid item xs={12}>
                         <Card
                             sx={{
                                 border: '1px dashed gray', // Add a gray dashed border
