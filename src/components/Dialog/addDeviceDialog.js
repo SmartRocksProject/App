@@ -86,6 +86,7 @@ export default function AddDeviceDialog({ ...props }) {
                 BleDevice: bleDevices[0],
                 name: bleDevices[0].name,
                 connection: onConnect(bleDevices[0]),
+                logData: [],
             };
 
             // Add the new device to the device list

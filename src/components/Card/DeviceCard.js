@@ -52,17 +52,26 @@ export default function DeviceCard({ device, index, ...props }) {
     // get detection message
     const getDetectionMessage = () => {
         let detectionMessage = null;
-        if (device.logData[0].detectionType === "S") {
-            detectionMessage = 'Human Seismic Activity Detected!';
+
+        // Check if device.logData[0] exists
+        if (device.logData[0]) {
+
+            console.log(device.logData[0]);
+            
+            if (device.logData[0].detectionType === "S") {
+                detectionMessage = 'Human Seismic Activity Detected!';
+            }
+            else if (device.logData[0].detectionType === "V") {
+                detectionMessage = 'Human Vibration Activity Detected!';
+            }
+            else if (device.logData[0].detectionType === "B") {
+                detectionMessage = 'Battery Levels Low!';
+            }
         }
-        else if (device.logData[0].detectionType === "V") {
-            detectionMessage = 'Human Vibration Activity Detected!';
-        }
-        else if (device.logData[0].detectionType === "B") {
-            detectionMessage = 'Battery Levels Low!';
-        }
+
+        // Otherwise, no detection data exists. No data to display.
         else {
-            detectionMessage = null;
+            detectionMessage = 'Unknown';
         }
         return detectionMessage;
     }
