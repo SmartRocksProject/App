@@ -27,9 +27,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
 
 // Local
-import { DataStoreContext } from '../../dataStore';
+import { DataStoreContext, getLastLogEvent } from '../../dataStore';
 import { randId } from '../../util';
-import { Anchor } from '@mui/icons-material';
 
 
 // A card that displays a device and its details
@@ -39,6 +38,10 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
+    // const lastLogEvent = getLastLogEvent(device);
+    // console.log(device);
+    // console.log(lastLogEvent);
 
     // Get GPS message
     function getGPSMessage() {
@@ -61,8 +64,6 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
 
         // Check if device.logData[0] exists
         if (device.logData[0]) {
-
-            console.log(device.logData[0]);
             
             if (device.logData[0].detectionType === "S") {
                 detectionMessage = 'Human Seismic Activity Detected!';
@@ -121,7 +122,7 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
                     >
                         <Typography>View Raw Log File</Typography>
                     </AccordionSummary>
-                    <AccordionDetails>
+                    <AccordionDetails >
                         <pre>
                             {device.logFile}
                         </pre>

@@ -2,165 +2,128 @@
 // React 
 import React, { useMemo } from 'react';
 import MaterialReactTable from 'material-react-table';
+import { useSnackbar } from 'notistack';
 
 // Material UI
 import { createTheme, ThemeProvider, useTheme } from '@mui/material';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-
-const notifications = [
-    {
-        id: 1,
-        title: 'Notification 1',
-        description: 'This is the description for notification 1.',
-        image: 'https://via.placeholder.com/40',
-    },
-    {
-        id: 2,
-        title: 'Notification 2',
-        description: 'This is the description for notification 2.',
-        image: 'https://via.placeholder.com/40',
-    },
-];
+// Local
+import { DataStoreContext } from '../dataStore';
 
 
-//nested data is ok, see accessorKeys in ColumnDef below
-const data = [
-    {
-        name: {
-            firstName: 'John',
-            lastName: 'Doe',
-        },
-        address: '261 Erdman Ford',
-        city: 'East Daphne',
-        state: 'Kentucky',
-    },
-    {
-        name: {
-            firstName: 'Jane',
-            lastName: 'Doe',
-        },
-        address: '769 Dominic Grove',
-        city: 'Columbus',
-        state: 'Ohio',
-    },
-    {
-        name: {
-            firstName: 'Joe',
-            lastName: 'Doe',
-        },
-        address: '566 Brakus Inlet',
-        city: 'South Linda',
-        state: 'West Virginia',
-    },
-    {
-        name: {
-            firstName: 'Kevin',
-            lastName: 'Vandy',
-        },
-        address: '722 Emie Stream',
-        city: 'Lincoln',
-        state: 'Nebraska',
-    },
-    {
-        name: {
-            firstName: 'Joshua',
-            lastName: 'Rolluffs',
-        },
-        address: '32188 Larkin Turnpike',
-        city: 'Charleston',
-        state: 'South Carolina',
-    },
-];
-  
 // Notifcation Page Component
 export default function Notification() {
 
+    // Data Store
+    const { darkMode, setDarkMode } = React.useContext(DataStoreContext);
+    const { logEvents, setLogEvents } = React.useContext(DataStoreContext);
+    const { notifications, setNotifications } = React.useContext(DataStoreContext);
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
     // Theming
     const globalTheme = useTheme();
-    const tableTheme = useMemo(
+    const lightTableTheme = useMemo(
         () =>
             createTheme({
-                palette: {
+                palette: { 
+                    mode: "light",
                     background: {
-                        default:
-                            globalTheme.palette.mode === 'light'
-                                ? 'rgb(254,255,244)' //random light yellow color for the background in light mode
-                                : '#000', //pure black table in dark mode for fun
+                        default: "rgb(254,255,244)"
                     },
                 },
             }),
         [globalTheme],
     );
+    const darkTableTheme = useMemo(
+        () =>
+        createTheme({ 
+            palette: { mode: "dark", },
+        }),
+        [globalTheme],
+    );
 
-    //should be memoized or stable
+    // Table columns: should be memoized or stable
     const columns = useMemo(
         () => [
             {
-                accessorKey: 'name.firstName', //access nested data with dot notation
-                header: 'First Name',
+                accessorKey: 'nodeNum',
+                header: 'ID',
             },
             {
-                accessorKey: 'name.lastName',
-                header: 'Last Name',
+                accessorKey: 'detectionType',
+                header: 'Detection Type',
             },
             {
-                accessorKey: 'address', //normal accessorKey
-                header: 'Address',
+                accessorKey: 'dateTime',
+                header: 'Date Time',
             },
             {
-                accessorKey: 'city',
-                header: 'City',
-            },
-            {
-                accessorKey: 'state',
-                header: 'State',
+                accessorKey: 'gpsData',
+                header: 'GPS Position',
             },
         ],
         [],
     );
 
+    // Render a list of event logs in proper format from logEvents
+    const TableLogEvents = [];
+
+    // get detection name
+    const getDetectionName = (detectionType) => {
+        if (detectionType === 'S') {
+            return 'Seismic Activity Detected';
+        } else if (detectionType === 'V') {
+            return 'Voice Activity Detected';
+        } else {
+            return 'N/A';
+        }
+    }
+
+    // For each log event, create a new table row
+    for (let i = 0; i < logEvents.length; i++) {
+        TableLogEvents[i] = {
+            nodeNum: logEvents[i].nodeId,
+            dateTime: `${logEvents[i].year}-${logEvents[i].month}-${logEvents[i].day} ${logEvents[i].hour}:${logEvents[i].minute}:${logEvents[i].second}`,
+            detectionType: getDetectionName(logEvents[i].detectionType),
+            gpsData: `${logEvents[i].latDeg}°${logEvents[i].latMin}'${logEvents[i].latSec}"${logEvents[i].latCP}, ${logEvents[i].lonDeg}°${logEvents[i].lonMin}'${logEvents[i].lonSec}"${logEvents[i].lonCP}`,
+        };
+    }
+
+    // Handle Read Notifications Button
+    const handleReadNotifications = () => {
+        setNotifications(0);
+        enqueueSnackbar('Notifications marked as read!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+    };
+
+    // Handle Delete All Button
+    const handleDeleteAll = () => {
+        setLogEvents([]);
+        enqueueSnackbar('All notifications deleted!', { variant: 'warning', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+    };
+
     return (
-        <Box sx={{ }}>
-            <Typography variant="h5" sx={{p: 2}}>Notifications</Typography>
-            <ThemeProvider theme={tableTheme}>
+        <Box sx={{}}>
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, }}>
+                <Typography variant="h5" sx={{flexGrow: 1}}>Notifications</Typography>
+                <Button variant="outlined" color="primary" onClick={handleReadNotifications} sx={{ mx: 2, }}>
+                    Mark All Read
+                </Button>
+                <Button variant="outlined" color="error" onClick={handleDeleteAll}>
+                    Delete All
+                </Button>
+            </Box>
+            <ThemeProvider theme={darkMode ? darkTableTheme : lightTableTheme }>
                 <MaterialReactTable
                     columns={columns}
-                    data={data}
+                    data={TableLogEvents}
                     enableRowSelection
                     enableColumnOrdering
                     enablePinning
                 />
             </ThemeProvider>
-            {/* <List>
-                {notifications.map((notification) => (
-                    <ListItem key={notification.id} alignItems="flex-start">
-                        <ListItemAvatar>
-                            <Avatar alt={notification.title} src={notification.image} />
-                        </ListItemAvatar>
-                        <ListItemText
-                            primary={notification.title}
-                            secondary={
-                                <React.Fragment>
-                                    <Typography
-                                        component="span"
-                                        variant="body2"
-                                        color="text.primary"
-                                    >
-                                        {notification.description}
-                                    </Typography>
-                                </React.Fragment>
-                            }
-                        />
-                    </ListItem>
-                ))}
-            </List> */}
         </Box>
     );
 }

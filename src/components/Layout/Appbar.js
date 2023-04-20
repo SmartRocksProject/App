@@ -49,6 +49,7 @@ const StyledAppBar = styled(AppBar, {shouldForwardProp: (prop) => prop !== 'open
 export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
 
     const { darkMode, setDarkMode } = React.useContext(DataStoreContext);
+    const { notifications } = React.useContext(DataStoreContext);
 
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
@@ -66,10 +67,9 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
     const handleMenuClose = () => {
         setAnchorEl(null);
         handleMobileMenuClose();
-    };
 
-    const handleMobileMenuOpen = (event) => {
-        setMobileMoreAnchorEl(event.currentTarget);
+        // Link to Settings Page
+        
     };
 
     const handleDarkMode = () => {
@@ -93,60 +93,7 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
             open={isMenuOpen}
             onClose={handleMenuClose}
         >
-            <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-            <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-        </Menu>
-    );
-
-    const mobileMenuId = 'primary-search-account-menu-mobile';
-    const renderMobileMenu = (
-        <Menu
-            anchorEl={mobileMoreAnchorEl}
-            anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
-            id={mobileMenuId}
-            keepMounted
-            transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-            }}
-            open={isMobileMenuOpen}
-            onClose={handleMobileMenuClose}
-        >
-            <MenuItem>
-                <IconButton size="large" aria-label="show 4 new mails" color="inherit">
-                    <Badge badgeContent={4} color="error">
-                        <MailIcon />
-                    </Badge>
-                </IconButton>
-                <p>Messages</p>
-            </MenuItem>
-            <MenuItem>
-                <IconButton
-                    size="large"
-                    aria-label="show 17 new notifications"
-                    color="inherit"
-                >
-                    <Badge badgeContent={17} color="error">
-                        <NotificationsIcon />
-                    </Badge>
-                </IconButton>
-                <p>Notifications</p>
-            </MenuItem>
-            <MenuItem onClick={handleProfileMenuOpen}>
-                <IconButton
-                    size="large"
-                    aria-label="account of current user"
-                    aria-controls="primary-search-account-menu"
-                    aria-haspopup="true"
-                    color="inherit"
-                >
-                    <AccountCircle />
-                </IconButton>
-                <p>Profile</p>
-            </MenuItem>
+            <MenuItem onClick={handleMenuClose} component={Link} to="/settings">Settings</MenuItem>
         </Menu>
     );
 
@@ -172,55 +119,32 @@ export default function PrimaryAppBar({ open, handleDrawerToggle, ...props }) {
                     >
                         SmartRocks
                     </Typography>
-                    {/* <Search>
-                        <SearchIconWrapper>
-                            <SearchIcon />
-                        </SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Search…"
-                            inputProps={{ 'aria-label': 'search' }}
-                        />
-                    </Search> */}
                     <Box sx={{ flexGrow: 1 }} />
-                    <Box sx={{ display: { xs: 'flex', md: 'flex' } }}>
-                        <IconButton size="large" color="inherit" onClick={handleDarkMode}>
-                            <Brightness4Icon />
-                        </IconButton>
-                        <IconButton
-                            size="large"
-                            aria-label="show 17 new notifications"
-                            color="inherit"
-                            component={Link} to="/notification"
-                            sx={{ display: { xs: 'none', md: 'block' } }}
-                        >
-                            <Badge badgeContent={17} color="error">
-                                <NotificationsIcon />
-                            </Badge>
-                        </IconButton>
-                        <IconButton
-                            size="large"
-                            edge="end"
-                            aria-label="account of current user"
-                            aria-controls={menuId}
-                            aria-haspopup="true"
-                            onClick={handleProfileMenuOpen}
-                            color="inherit"
-                        >
-                            <AccountCircle />
-                        </IconButton>
-                    </Box>
-                    {/* <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-                        <IconButton
-                            size="large"
-                            aria-label="show more"
-                            aria-controls={mobileMenuId}
-                            aria-haspopup="true"
-                            onClick={handleMobileMenuOpen}
-                            color="inherit"
-                        >
-                            <MoreIcon />
-                        </IconButton>
-                    </Box> */}
+                    <IconButton size="large" color="inherit" onClick={handleDarkMode}>
+                        <Brightness4Icon />
+                    </IconButton>
+                    <IconButton
+                        size="large"
+                        aria-label="show 17 new notifications"
+                        color="inherit"
+                        component={Link} to="/notification"
+                        sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}
+                    >
+                        <Badge badgeContent={notifications} color="error">
+                            <NotificationsIcon />
+                        </Badge>
+                    </IconButton>
+                    <IconButton
+                        size="large"
+                        edge="end"
+                        aria-label="account of current user"
+                        aria-controls={menuId}
+                        aria-haspopup="true"
+                        onClick={handleProfileMenuOpen}
+                        color="inherit"
+                    >
+                        <AccountCircle />
+                    </IconButton>
                 </Toolbar>
             </StyledAppBar>
             {renderMenu}

@@ -71,13 +71,29 @@ const navButtons = [
 
 // The List Components 
 function ListComponent({ navButtons, open }) {
+    const theme = useTheme();
+    const isMD = useMediaQuery(theme.breakpoints.up('md'));
 
     // Get data store
+    const { openDrawer, setOpenDrawer } = React.useContext(DataStoreContext);
     const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
+    const { notifications } = React.useContext(DataStoreContext);
 
     // Handle Add Button
     const handleAddButton = () => {
         setOpenDeviceDialog(true);
+    }
+
+    // Handle close
+    const handleClose = () => {
+
+        // If in mobile mode, close the drawer
+        if (!isMD) {
+            setOpenDrawer(false);
+        }
+
+        // Otherwise, do nothing
+        return;   
     }
 
     return (
@@ -87,7 +103,7 @@ function ListComponent({ navButtons, open }) {
 
             {navButtons.map((item, index) => (
                 <ListItem disablePadding sx={{ display: 'block' }} key={index}>
-                    <ListItemButton component={Link} to={item.link} sx={{
+                    <ListItemButton onClick={handleClose} component={Link} to={item.link} sx={{
                         minHeight: 48, justifyContent: open ? 'initial' : 'center', px: 2.5,
                     }}>
                         <ListItemIcon sx={{
@@ -95,7 +111,7 @@ function ListComponent({ navButtons, open }) {
                             mr: open ? 3 : 'auto',
                             justifyContent: 'center',
                         }}>
-                            <Badge color="error" badgeContent={0}>
+                            <Badge color="error" badgeContent={item.text === "Notification" ? notifications : 0}>
                                 {item.icon}
                             </Badge>
                         </ListItemIcon>
@@ -131,6 +147,7 @@ export default function Layout({ children }) {
     const isMD = useMediaQuery(theme.breakpoints.up('md'));
 
     const { openDrawer, setOpenDrawer } = React.useContext(DataStoreContext);
+    const { notifications } = React.useContext(DataStoreContext);
 
     const [value, setValue] = React.useState(0);
     const navigate = useNavigate();
@@ -197,7 +214,15 @@ export default function Layout({ children }) {
                     }}
                 >
                     { navButtons.map((button, index) => (
-                        <BottomNavigationAction key={index} label={button.text} icon={button.icon} />
+                        <BottomNavigationAction 
+                            key={index}
+                            label={button.text}
+                            icon={
+                                <Badge color="error" badgeContent={button.text === "Notification" ? notifications : 0}>
+                                    {button.icon}
+                                </Badge>
+                            }
+                        />
                     ))}
                 </BottomNavigation>
             </Paper>

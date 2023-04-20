@@ -27,7 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import Stack from '@mui/material/Stack';
 
 // Local
-import { DataStoreContext, Device, LogEvent, parseLogFile } from '../../dataStore';
+import { DataStoreContext, Device, LogEvent, parseLogFile, canAddLogEvent } from '../../dataStore';
 import { onConnect, requestNewDevice, randId } from '../../util';
 
 
@@ -38,6 +38,8 @@ export default function AddDeviceDialog({ ...props }) {
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
+    const { logEvents, setLogEvents } = React.useContext(DataStoreContext);
+    const { notifications, setNotifications } = React.useContext(DataStoreContext);
 
     // Local state to store list of real BLE connections
     const [bleDevices, setBleDevices] = React.useState([]);
@@ -72,6 +74,38 @@ export default function AddDeviceDialog({ ...props }) {
         // Default to false
         return false;
     };
+
+    // Add a device to the device list
+    const addDevice = (device) => {
+
+        // For log in parsed log data, add to logEvents using addLogEvent
+        let newNotifications = 0;
+        for (let log of device.logData) {
+
+            // If the log event can be added, increment the notifications and add it
+            if (canAddLogEvent(logEvents, log) && log) {
+
+                console.log('Adding log event: ' + log);
+
+                // Increment the notifications
+                newNotifications += 1;
+
+                // Add the log event to the setLogEvents
+                setLogEvents(prevLogEvents => [...prevLogEvents, log]);
+            }
+        }
+
+        // Set the notifications
+        setNotifications(notifications + newNotifications);
+        console.log(logEvents);
+
+        // Set the logEvents
+        // setLogEvents(logEvents);
+
+        // Add the new device to the device list
+        setDeviceList((prevDevices) => [...prevDevices, device]);
+
+    };
       
     // Handle the form submission
     const handleFormSubmit = (event) => {
@@ -94,7 +128,7 @@ export default function AddDeviceDialog({ ...props }) {
             };
 
             // Add the new device to the device list
-            setDeviceList((prevDevices) => [...prevDevices, newDevice]);
+            addDevice(newDevice);
             setBleDevices([]);
             
         } else if (deviceType === 'simulated') {
@@ -108,9 +142,8 @@ export default function AddDeviceDialog({ ...props }) {
             };
 
             // Add the new device to the device list
-            setDeviceList((prevDevices) => [...prevDevices, newDevice]);
-            
-        }
+            addDevice(newDevice);  
+        } 
 
         setSimulatedDevice(Device);
         setOpenDeviceDialog(false);
