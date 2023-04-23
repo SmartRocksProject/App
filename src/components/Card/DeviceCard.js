@@ -28,7 +28,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
 
 // Local
-import { DataStoreContext, getLastLogEvent } from '../../dataStore';
+import { DataStoreContext, displayGPS, displayMessageType, getTime } from '../../dataStore';
 import { randId } from '../../util';
 
 
@@ -43,49 +43,6 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile,
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-
-    // get last log message if logData exists
-    // Function to return the last log from the array
-    function getLastLog(device) {
-        return device.logData[device.logData.length - 2];
-    }
-
-    // Function to display the GPS coordinates of a log
-    function displayGPS(device) {
-        const log = getLastLog(device);
-        if (!log) return (`No GPS coordinates available`);
-        const lat = `${log.latDeg}°${log.latMin}'${log.latSec}" ${log.latCP}`;
-        const lon = `${log.lonDeg}°${log.lonMin}'${log.lonSec}" ${log.lonCP}`;
-        return (`GPS coordinates: ${lat}, ${lon}`);
-    }
-
-    // Function to display the log message type
-    function displayMessageType(device) {
-        const log = getLastLog(device);
-        if (!log) return (`No message type available`);
-        if (log.detectionType === 'S') {
-            return "Seismic Event Detected (S)";
-        } else if (log.detectionType === 'V') {
-            return "Vibration Event Detected (V)";
-        } else {
-            return "No Event Detected";
-        }
-    }
-
-    // Get the time
-    function getTime(device) {
-        const log = getLastLog(device);
-        if (!log) return (`No time available`);
-        const time = new Date();
-        time.setUTCFullYear(log.year);
-        time.setUTCMonth(log.month - 1);
-        time.setUTCDate(log.day);
-        time.setUTCHours(log.hour);
-        time.setUTCMinutes(log.minute);
-        time.setUTCSeconds(log.second);
-        time.setUTCMilliseconds(0); // optional, depending on your requirements
-        return time.toLocaleString();
-    }
 
     return (
         <Card {...props}>
@@ -104,13 +61,13 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile,
                     Last log message:
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    • GPS: {String(displayGPS(device))}
+                    • GPS: {String(displayGPS(device.logData[device.logData.length - 1]))}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    • Last log message: {String(displayMessageType(device))}
+                    • Last log message: {String(displayMessageType(device.logData[device.logData.length - 1]))}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    • Time: {String(getTime(device))}
+                    • Time: {String(getTime(device.logData[device.logData.length - 1]))}
                 </Typography>
 
                 {/* Display the log file as code block */}

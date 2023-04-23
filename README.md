@@ -27,12 +27,17 @@ To run this project on your own device, first install [Docker](https://docs.dock
 git clone https://github.com/SmartRocksProject/App && cd App
 ```
 
-2. Docker compose up to build and run the app:
+2. Build the docker image running the following command:
 ```sh
-docker compose up --build
+docker compose build --no-cache
 ```
 
-3. Open the app in a chromium based web browser at: [https://localhost:3000](https://localhost:3000)
+3. Then docker compose up to run the app:
+```sh
+docker compose up
+```
+
+4. Open the app in a chromium based web browser at: [https://localhost:3000](https://localhost:3000)
 
 ## Usage
 

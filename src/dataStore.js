@@ -177,8 +177,42 @@ export function subscribeAll(device, connection) {
     });
 }
 
+// Function to display the GPS coordinates of a log
+export function displayGPS(log) {
+    if (!log) return "Not available";
+    const lat = `${log.latDeg}°${log.latMin}'${log.latSec}" ${log.latCP}`;
+    const lon = `${log.lonDeg}°${log.lonMin}'${log.lonSec}" ${log.lonCP}`;
+    return (`${lat}, ${lon}`);
+}
+
+// Function to display the log message type
+export function displayMessageType(log) {
+    if (!log) return (`No message type available`);
+    if (log.detectionType === 'S') {
+        return "Seismic Event Detected (S)";
+    } else if (log.detectionType === 'V') {
+        return "Vibration Event Detected (V)";
+    } else {
+        return "No Event Detected";
+    }
+}
+
+// Get the time
+export function getTime(log) {
+    if (!log) return (`No time available`);
+    const time = new Date();
+    time.setUTCFullYear(log.year);
+    time.setUTCMonth(log.month - 1);
+    time.setUTCDate(log.day);
+    time.setUTCHours(log.hour);
+    time.setUTCMinutes(log.minute);
+    time.setUTCSeconds(log.second);
+    time.setUTCMilliseconds(0); // optional, depending on your requirements
+    return time.toLocaleString();
+}
+
 // Helper function to create a LogEvent object
-function processLogLine(line) {
+export function processLogLine(line) {
     const parts = line.split(' ');
 
     return {
@@ -209,8 +243,11 @@ export function parseLogFile(logFileContent) {
     // Split the log file into an array of lines
     const lines = logFileContent.split('\n');
 
+    // Filter out empty lines and lines with only whitespace characters
+    const nonEmptyLines = lines.filter(line => line.trim() !== '');
+
     // Helper function to process a single line of the log file
-    return lines.map(line => processLogLine(line));
+    return nonEmptyLines.map(line => processLogLine(line));
 }
 
 // Helper function that given a deviceList array, sets each device connection status to false

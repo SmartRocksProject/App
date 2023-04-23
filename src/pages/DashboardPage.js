@@ -7,6 +7,7 @@ import { MapProvider } from "react-map-gl";
 import { Layer, Map, Popup, Marker, Source, useMap } from "react-map-gl";
 import { NavigationControl, GeolocateControl } from "react-map-gl";
 import { Link } from 'react-router-dom';
+import { DMS2Decimal } from 'dms-to-decimal';
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // Material UI
@@ -24,12 +25,17 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+import IconButton from '@mui/material/IconButton';
 
 // Material UI: Icons
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 
 // Local
-import { DataStoreContext } from '../dataStore';
+import { DataStoreContext, displayGPS, displayMessageType, getTime } from '../dataStore';
 
 
 
@@ -60,15 +66,6 @@ const calculateInitialViewState = (nodes, width, height) => {
     };
 }; 
 
-// Helper function to convert DMS to Decimal
-const dmsToDecimal = (deg, min, sec, cp) => {
-    let decimal = deg + (min / 60) + (sec / 3600);
-    if (cp === 'S' || cp === 'W') {
-        decimal *= -1;
-    }
-    return decimal;
-};
-
 // Helper function to convert log events to nodes
 const logEventsToNodes = (logEvents) => {
 
@@ -79,17 +76,26 @@ const logEventsToNodes = (logEvents) => {
     logEvents.forEach((event) => {
 
         // Calculate the latitude and longitude
-        const latitude = dmsToDecimal(event.latDeg, event.latMin, event.latSec, event.latCP);
-        const longitude = dmsToDecimal(event.lonDeg, event.lonMin, event.lonSec, event.lonCP);
+        const latitude = DMS2Decimal(event.latDeg, event.latMin, event.latSec, event.latCP);
+        const longitude = DMS2Decimal(event.lonDeg, event.lonMin, event.lonSec, event.lonCP);
 
-        // Update the latest node data
-        latestNodes[event.nodeId] = {
-            id: event.nodeId,
-            latitude: latitude,
-            longitude: longitude,
-            label: `Device ${event.nodeId}`,
-            detectionType: event.detectionType,
-        };
+        // Create a Date object for the current event's timestamp
+        const eventDate = new Date(event.year, event.month - 1, event.day, event.hour, event.minute, event.second);
+
+        // Update the latest node data if the current event's timestamp is more recent than the existing data
+        if (!latestNodes[event.nodeId] || eventDate > latestNodes[event.nodeId].timestamp) {
+            latestNodes[event.nodeId] = {
+                id: event.nodeId,
+                latitude: latitude,
+                longitude: longitude,
+                label: `Device ${event.nodeId}`,
+                detectionType: event.detectionType,
+                timestamp: eventDate, // Store the timestamp for comparison
+                time: getTime(event), // Store the formatted time for display
+                gps: displayGPS(event),
+                messageType: displayMessageType(event),
+            };
+        }
     });
 
     // Return the latest node data
@@ -196,10 +202,14 @@ export default function Dashboard() {
     const [isMapLoaded, setIsMapLoaded] = useState(false);
 
     // Local Variables
-    const nodes = logEventsToNodes(logEvents);    
+    const nodes = logEventsToNodes(logEvents);
     const initialViewState = calculateInitialViewState(nodes, 800, 500); // Replace 800 and 500 with your map's width and height.
 
-    // console.log("initialViewState: ", initialViewState);
+    // Console Logs
+    console.log("Dashboard Rendered");
+    console.log("- Device List: ", deviceList);
+    console.log("- Log Events: ", logEvents);
+    console.log("- Nodes: ", nodes);
 
     const flyToNode = (latitude, longitude, zoom) => {
         if (isMapLoaded) {
@@ -271,7 +281,17 @@ export default function Dashboard() {
                                         offsetTop={-15}
                                         anchor="top"
                                     >
-                                        <div>{selectedNode.label}</div>
+                                        <Box >
+                                            <Typography variant="body2" color="text.secondary">
+                                                • GPS: {selectedNode.gps}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                • Last log message: {selectedNode.messageType}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                • Time: {selectedNode.time}
+                                            </Typography>
+                                        </Box>
                                     </Popup>
                                 )}
 
@@ -321,7 +341,27 @@ export default function Dashboard() {
                                     }}                                
                                 >
                                     <ListItemAvatar><Avatar><DeviceHubIcon/></Avatar></ListItemAvatar>
-                                    <ListItemText primary={`Device ${node.id}`} />
+                                    <ListItemText primary={`Device ${node.id}`} secondary={
+                                        <>
+                                            {/* <Typography variant="body2" color="text.secondary">
+                                                • GPS: {node.gps}
+                                            </Typography> */}
+                                            <Typography variant="body2" color="text.secondary">
+                                                {node.messageType}
+                                            </Typography>
+                                            {/* <Typography variant="body2" color="text.secondary">
+                                                • Time: {node.time}
+                                            </Typography> */}
+                                        </>
+                                    } />
+                                    <ListItemSecondaryAction>
+                                        <IconButton edge="end" aria-label="delete" onClick={() => {
+                                            setSelectedNode(node);
+                                            flyToNode(node.latitude, node.longitude, 15);
+                                        }}>
+                                            <MyLocationIcon />
+                                        </IconButton>
+                                    </ListItemSecondaryAction>
                                 </ListItem>
                             ))}
                         </List>
