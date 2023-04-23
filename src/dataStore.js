@@ -1,6 +1,7 @@
 
 // React
 import React, { useContext, createContext, useState } from 'react';
+import { Protobuf } from "@smartrocksproject/meshtasticjs";
 
 // Material UI
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -60,7 +61,121 @@ export const Device = {
 
     // Array of LogEvent objects parsed from the log file
     logData: [],
+
+    // Implement logic for setting the channel settings
+    channels: new Map(),
+    addChannel(channel) {
+        if (Device) {
+            Device.channels.set(channel.index, channel);
+        }
+    },
+
+    // Implement logic for setting the config
+    config: Protobuf.Config,
+    setConfig: (new_config) => {
+        if (Device.config && new_config.payloadVariant) {
+            switch (new_config.payloadVariant.case) {
+                case "device":
+                    Device.config.device = new_config.payloadVariant.value;
+                    break;
+                case "position":
+                    Device.config.position = new_config.payloadVariant.value;
+                    break;
+                case "power":
+                    Device.config.power = new_config.payloadVariant.value;
+                    break;
+                case "network":
+                    Device.config.network = new_config.payloadVariant.value;
+                    break;
+                case "display":
+                    Device.config.display = new_config.payloadVariant.value;
+                    break;
+                case "lora":
+                    Device.config.lora = new_config.payloadVariant.value;
+                    break;
+                case "bluetooth":
+                    Device.config.bluetooth = new_config.payloadVariant.value;
+                    break;
+            }
+        }
+    },
+      
+    // Implement logic for setting the module config
+    moduleConfig: Protobuf.ModuleConfig,
+    setModuleConfig(config) {
+        if (Device) {
+            switch (config.payloadVariant.case) {
+                case "mqtt":
+                    Device.moduleConfig.mqtt = config.payloadVariant.value;
+                    break;
+                case "serial":
+                    Device.moduleConfig.serial = config.payloadVariant.value;
+                    break;
+                case "externalNotification":
+                    Device.moduleConfig.externalNotification = config.payloadVariant.value;
+                    break;
+                case "storeForward":
+                    Device.moduleConfig.storeForward = config.payloadVariant.value;
+                    break;
+                case "rangeTest":
+                    Device.moduleConfig.rangeTest = config.payloadVariant.value;
+                    break;
+                case "telemetry":
+                    Device.moduleConfig.telemetry = config.payloadVariant.value;
+                    break;
+                case "cannedMessage":
+                    Device.moduleConfig.cannedMessage = config.payloadVariant.value;
+                    break;
+                case "audio":
+                    Device.moduleConfig.audio = config.payloadVariant.value;
+            }
+        }
+    },
+
+    // Implement logic for setting the hardware
+    hardware: Protobuf.NodeInfo,
+    setHardware: (nodeInfo) => {
+        if (Device) {
+            Device.hardware = nodeInfo;
+        }
+    },
+
+    // Node num
+    nodeNum: 0,
+    setNodeNum: (nodeNum) => {
+        if (Device) {
+            Device.nodeNum = nodeNum;
+        }
+    }
+    
 };
+
+// Create allSubscriber
+export function subscribeAll(device, connection) {
+    let myNodeNum = 0;
+
+    // Subscribe to channel packets
+    connection.events.onChannelPacket.subscribe((channel) => {
+        device.addChannel(channel);
+    });
+
+    // Subscribe config packets
+    connection.events.onConfigPacket.subscribe(function (config) {
+        device.setConfig(config);
+        // console.log("Config set!", config);
+    });
+
+    // Subscribe module config packets
+    connection.events.onModuleConfigPacket.subscribe(function (moduleConfig) {
+        device.setModuleConfig(moduleConfig);
+    });
+
+    // Subscribe to node info packets
+    connection.events.onMyNodeInfo.subscribe((nodeInfo) => {
+        device.setHardware(nodeInfo);
+        device.setNodeNum(nodeInfo.nodeNum);
+    });
+}
 
 // Helper function to create a LogEvent object
 function processLogLine(line) {
@@ -175,10 +290,11 @@ export const DataStoreProvider = ({ children }) => {
     const [darkMode, setDarkMode] = useState(false);
 
     // Functional States
-    const [deviceList, setDeviceList] = useState(() => {
-        const storedDeviceList = localStorage.getItem('deviceList');
-        return storedDeviceList ? JSON.parse(storedDeviceList) : [];
-    });
+    const [deviceList, setDeviceList] = useState([]);
+    // const [deviceList, setDeviceList] = useState(() => {
+    //     const storedDeviceList = localStorage.getItem('deviceList');
+    //     return storedDeviceList ? JSON.parse(storedDeviceList) : [];
+    // });
     const [logEvents, setLogEvents] = useState(() => {
         const storedLogEvents = localStorage.getItem('logEvents');
         return storedLogEvents ? JSON.parse(storedLogEvents) : [];

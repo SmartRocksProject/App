@@ -21,6 +21,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Divider from '@mui/material/Divider';
+import { useTheme } from '@mui/material/styles';
 
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -32,57 +33,59 @@ import { randId } from '../../util';
 
 
 // A card that displays a device and its details
-export default function DeviceCard({ device, handleConnect, handleDownloadFile, handleDelete, showConnectButton, showDownloadButton, ...props }) {
+export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
+    handleDelete, showConnectButton, showDownloadButton, handleUpdateSettings, ...props }) {
+
+    // Theme
+    const theme = useTheme();
 
     // States
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    // const lastLogEvent = getLastLogEvent(device);
-    // console.log(device);
-    // console.log(lastLogEvent);
+    // get last log message if logData exists
+    // Function to return the last log from the array
+    function getLastLog(device) {
+        return device.logData[device.logData.length - 2];
+    }
 
-    // Get GPS message
-    function getGPSMessage() {
-        const deviceLogsForId = device.logData.filter((log) => log.deviceId === device.name);
+    // Function to display the GPS coordinates of a log
+    function displayGPS(device) {
+        const log = getLastLog(device);
+        if (!log) return (`No GPS coordinates available`);
+        const lat = `${log.latDeg}°${log.latMin}'${log.latSec}" ${log.latCP}`;
+        const lon = `${log.lonDeg}°${log.lonMin}'${log.lonSec}" ${log.lonCP}`;
+        return (`GPS coordinates: ${lat}, ${lon}`);
+    }
 
-        if (deviceLogsForId.length > 0) {
-            const latestLog = deviceLogsForId[deviceLogsForId.length - 1];
-            const { latitude, longitude } = latestLog;
-            const latString = `${latitude.degrees}° ${latitude.minutes}' ${latitude.seconds}" ${latitude.cardinalPoint}`;
-            const lonString = `${longitude.degrees}° ${longitude.minutes}' ${longitude.seconds}" ${longitude.cardinalPoint}`;
-            return `${latString}, ${lonString}`;
+    // Function to display the log message type
+    function displayMessageType(device) {
+        const log = getLastLog(device);
+        if (!log) return (`No message type available`);
+        if (log.detectionType === 'S') {
+            return "Seismic Event Detected (S)";
+        } else if (log.detectionType === 'V') {
+            return "Vibration Event Detected (V)";
         } else {
-            return `Unknown`;
+            return "No Event Detected";
         }
     }
 
-    // get detection message
-    const getDetectionMessage = () => {
-        let detectionMessage = null;
-
-        // Check if device.logData[0] exists
-        if (device.logData[0]) {
-            
-            if (device.logData[0].detectionType === "S") {
-                detectionMessage = 'Human Seismic Activity Detected!';
-            }
-            else if (device.logData[0].detectionType === "V") {
-                detectionMessage = 'Human Vibration Activity Detected!';
-            }
-            else if (device.logData[0].detectionType === "B") {
-                detectionMessage = 'Battery Levels Low!';
-            }
-        }
-
-        // Otherwise, no detection data exists. No data to display.
-        else {
-            detectionMessage = 'Unknown';
-        }
-        return detectionMessage;
+    // Get the time
+    function getTime(device) {
+        const log = getLastLog(device);
+        if (!log) return (`No time available`);
+        const time = new Date();
+        time.setUTCFullYear(log.year);
+        time.setUTCMonth(log.month - 1);
+        time.setUTCDate(log.day);
+        time.setUTCHours(log.hour);
+        time.setUTCMinutes(log.minute);
+        time.setUTCSeconds(log.second);
+        time.setUTCMilliseconds(0); // optional, depending on your requirements
+        return time.toLocaleString();
     }
-    
 
     return (
         <Card {...props}>
@@ -94,16 +97,20 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
                         <Chip label="Simulated Device" color="warning" variant="outlined" />
                     }
                 </Stack>
-                {/* <Link to={`/devices/${device.id}`} style={{  }}> */}
-                    <Typography variant="h5" sx={{ py: 2 }}>
-                        {device.name}
-                    </Typography>
-                {/* </Link> */}
-                <Typography variant="body2" color="text.secondary">
-                    • GPS: {getGPSMessage()}
+                <Typography variant="h5" sx={{ py: 2 }}>
+                    {device.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    • Last log message: {getDetectionMessage()}
+                    Last log message:
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    • GPS: {String(displayGPS(device))}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    • Last log message: {String(displayMessageType(device))}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    • Time: {String(getTime(device))}
                 </Typography>
 
                 {/* Display the log file as code block */}
@@ -123,9 +130,11 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
                         <Typography>View Raw Log File</Typography>
                     </AccordionSummary>
                     <AccordionDetails >
-                        <pre>
-                            {device.logFile}
-                        </pre>
+                        <Box sx={{ backgroundColor: theme.palette.action.selected }} >
+                            <pre>
+                                {device.logFile}
+                            </pre>
+                        </Box>
                     </AccordionDetails>
                 </Accordion>
 
@@ -150,6 +159,15 @@ export default function DeviceCard({ device, handleConnect, handleDownloadFile, 
                     Download Logfile
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
+                <Button
+                    size="small"
+                    color="primary"
+                    onClick={handleUpdateSettings}
+                    variant="text"
+                    disabled={showDownloadButton ? false : true}
+                >
+                    Update Settings
+                </Button>
                 <Button 
                     size="small" 
                     variant="outlined" 

@@ -1,7 +1,7 @@
 
 // React 
 import React from 'react';
-import { Constants, IBLEConnection } from '@smartrocksproject/meshtasticjs';
+import { Constants, IBLEConnection, Protobuf } from '@smartrocksproject/meshtasticjs';
 import { useSnackbar } from 'notistack';
 
 // Material UI
@@ -22,10 +22,10 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/Apps';
 
 // Local
-import { DataStoreContext } from '../dataStore';
+import { DataStoreContext, subscribeAll, parseLogFile, canAddLogEvent } from '../dataStore';
 import { onConnect, requestNewDevice, randId, handleXModemOperation } from '../util';
 import DeviceCard from '../components/Card/DeviceCard';
-
+import UpdateSettingsDialog from '../components/Dialog/updateSettingsDialog';
 
 
 // Devices Page Component
@@ -35,15 +35,20 @@ export default function DevicesPage() {
     const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
     const { activeConnection, setActiveConnection } = React.useContext(DataStoreContext);
     const { openDeviceDialog, setOpenDeviceDialog } = React.useContext(DataStoreContext);
+    const { logEvents, setLogEvents } = React.useContext(DataStoreContext);
+    const { notifications, setNotifications } = React.useContext(DataStoreContext);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
     // Local state
     const [viewMode, setViewMode] = React.useState('list');
+    const [openUpdateSettingsDialog, setOpenUpdateSettingsDialog] = React.useState(false);
 
     // Open the device dialog
     const handleOpenDeviceDialog = () => {
         setOpenDeviceDialog(true);
     };
+
+    console.log(deviceList);
 
     // Connect to the device
     const handleConnect = async (device, index) => {
@@ -64,6 +69,9 @@ export default function DevicesPage() {
             // Set the active connection
             setActiveConnection(connection);
 
+            // Subscribe to all messages
+            subscribeAll(device, connection);
+
             // Show the device as connected
             setDeviceList((prev) => {
 
@@ -82,6 +90,19 @@ export default function DevicesPage() {
                 return newDevices;
             });
 
+            // // Subscribe config packets
+            // connection.events.onConfigPacket.subscribe(function (config) {
+            //     device.setConfig(config);
+            //     console.log("Config set!", config.payloadVariant.value);
+            //     console.log(device);
+            // });
+
+            // // Subscribe module config packets
+            // connection.events.onModuleConfigPacket.subscribe(function (moduleConfig) {
+            //     device.setModuleConfig(moduleConfig);
+            //     console.log("Module config set!", moduleConfig);
+            // });
+
             // Open the snackbar
             enqueueSnackbar('The device has successfully connected!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
 
@@ -89,6 +110,67 @@ export default function DevicesPage() {
             // Show the error
             console.error('Failed to connect:', error);
             enqueueSnackbar('Failed to connect to the device!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+        }
+    };
+
+    // Update settings on the device
+    const handleUpdateSettings = async () => {
+
+        // Check if there is an active connection
+        if (activeConnection) {
+
+            // Open the update settings dialog
+            setOpenUpdateSettingsDialog(true);
+
+            // Get the device
+            const device = activeConnection;
+
+            // Create the protobuf object
+            const loraConfig = new Protobuf.Config_LoRaConfig({
+                usePreset: true, // true to use a preset, false to use custom settings
+                // modemPreset: Protobuf.Config_LoRaConfig_ModemPreset.Bw125Cr45Sf128, // a preset from the available ModemPreset values
+                region: Protobuf.Config_LoRaConfig_RegionCode.US, // a region from the available RegionCode values
+                // other properties if needed
+            });
+
+            const channelSet = new Protobuf.ChannelSet({
+                settings: [], // an array of channel settings (Protobuf.ChannelSettings objects)
+                loraConfig: loraConfig, // the loraConfig object created in step 2
+            });              
+
+            // // Attempt to set the config on the device 
+            // try {
+                
+            //     // Set the config
+            //     await device.setConfig(
+            //         new Protobuf.Config({
+            //             payloadVariant: {
+            //                 case: "lora",
+            //                 value: loraConfig
+            //             }
+            //         })
+            //     );
+                
+            //     // Commit config
+            //     await device.commitEditSettings();
+
+            //     console.log('Config set!');
+
+            //     // Open the snackbar
+            //     enqueueSnackbar('The device has successfully updated!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+
+            // } catch (error) {
+                 
+            //     // Show the error
+            //     console.error('Failed to set config:', error);
+            //     enqueueSnackbar('Failed to update the device!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+            // }
+
+
+        } else {
+            
+            // Alert the user
+            enqueueSnackbar('No active connection!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
         }
     };
 
@@ -118,6 +200,27 @@ export default function DevicesPage() {
 
                     // Save the file result
                     device.logFile = result;
+                    device.logData = parseLogFile(result);
+
+                    // Update the notifications
+                    let newNotifications = 0;
+                    for (let log of device.logData) {
+
+                        // If the log event can be added, increment the notifications and add it
+                        if (canAddLogEvent(logEvents, log) && log) {
+
+                            console.log('Adding log event: ' + log);
+
+                            // Increment the notifications
+                            newNotifications += 1;
+
+                            // Add the log event to the setLogEvents
+                            setLogEvents(prevLogEvents => [...prevLogEvents, log]);
+                        }
+                    }
+
+                    // Set the notifications
+                    setNotifications(notifications + newNotifications);
 
                     // Return the new array
                     return newDevices;
@@ -147,7 +250,6 @@ export default function DevicesPage() {
         // Alert the user
         enqueueSnackbar('The device has been removed!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
     };
-
     
     // Determine if connect button should be shown
     const showConnectButton = (device) => {
@@ -187,10 +289,13 @@ export default function DevicesPage() {
 
     return (
         <Box>
+
+            {/* Heading */}
             <Typography variant="h6" sx={{ p: 2 }}>
                 Paired BLE Devices
             </Typography>
 
+            {/* List of devices */}
             <Grid container spacing={2}>
                 {deviceList.map((device, index) => (
                     <Grid item xs={12} key={index}>
@@ -201,7 +306,16 @@ export default function DevicesPage() {
                             handleDelete={() => handleDelete(device, index)}
                             showConnectButton={showConnectButton(device)}
                             showDownloadButton={showDownloadButton(device)}
+                            handleUpdateSettings={() => handleUpdateSettings()}
                         />
+
+                        {/* Device dialog */}
+                        <UpdateSettingsDialog
+                            open={openUpdateSettingsDialog}
+                            setOpen={setOpenUpdateSettingsDialog}
+                            device={device}
+                        />
+
                     </Grid>
                 ))}
                 {deviceList.length === 0 && (
@@ -221,19 +335,14 @@ export default function DevicesPage() {
                     </Grid>
                 )}
             </Grid>
+
+            {/* Add new device button */}
             <Box mt={2}>
                 <Button variant="contained" color="primary" onClick={handleOpenDeviceDialog}>
                     Add New Device
                 </Button>
-                {/* <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => handleXModemOperation(activeConnection)}
-                    disabled={!activeConnection}
-                >
-                    Use XModem
-                </Button> */}
             </Box>
+
         </Box>
     );
 }

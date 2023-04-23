@@ -97,7 +97,7 @@ export default function AddDeviceDialog({ ...props }) {
 
         // Set the notifications
         setNotifications(notifications + newNotifications);
-        console.log(logEvents);
+        // console.log(logEvents);
 
         // Set the logEvents
         // setLogEvents(logEvents);
