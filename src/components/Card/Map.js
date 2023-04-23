@@ -2,7 +2,7 @@
 // React
 import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from 'leaflet'; 
+import L from 'leaflet';
 
 // Material UI
 import Box from '@mui/material/Box';

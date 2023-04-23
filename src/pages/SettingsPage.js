@@ -1,5 +1,6 @@
 // React
 import React from 'react';
+import { MapProvider } from "react-map-gl";
 
 // Material UI
 import Box from '@mui/material/Box';

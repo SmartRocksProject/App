@@ -1,17 +1,17 @@
 
 // React
-import React from 'react';
-import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Popup } from "react-leaflet";
-import { MarkerLayer, Marker } from "react-leaflet-marker";
-import L from "leaflet";
-import markerIcon  from 'leaflet/dist/images/marker-icon-2x.png'
-
+import React, { useRef } from 'react';
+import { useCallback, useEffect, useState } from "react";
+import maplibregl from "maplibre-gl";
+import { MapProvider } from "react-map-gl";
+import { Layer, Map, Popup, Marker, Source, useMap } from "react-map-gl";
+import { NavigationControl, GeolocateControl } from "react-map-gl";
+import { Link } from 'react-router-dom';
+import "maplibre-gl/dist/maplibre-gl.css";
 
 // Material UI
-import { styled } from '@mui/material/styles';
+import { useTheme, styled } from "@mui/material/styles";
 import Box from '@mui/material/Box';
-// import Grid from '@mui/material/Grid';
 import Grid from '@mui/material/Unstable_Grid2'; // Grid version 2
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -26,176 +26,319 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 
 // Material UI: Icons
-import ImageIcon from '@mui/icons-material/Image';
-import WorkIcon from '@mui/icons-material/Work';
-import BeachAccessIcon from '@mui/icons-material/BeachAccess';
-import BatteryAlertIcon from '@mui/icons-material/BatteryAlert';
-import HelpIcon from '@mui/icons-material/Help';
-import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
+import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 
-function BasicCard() {
+// Local
+import { DataStoreContext } from '../dataStore';
+
+
+
+// Helper function to calculate the initial view state
+const calculateInitialViewState = (nodes, width, height) => {
+    const latitudes = nodes.map(node => node.latitude);
+    const longitudes = nodes.map(node => node.longitude);
+
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+
+    const center = [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+
+    const deltaX = maxLng - minLng;
+    const deltaY = maxLat - minLat;
+
+    const zoomX = Math.log2((width * 360) / (deltaX * 256));
+    const zoomY = Math.log2((height * 360) / (deltaY * 256));
+
+    const zoom = Math.min(zoomX, zoomY, 15) - 2;
+
+    return {
+        latitude: center[1],
+        longitude: center[0],
+        zoom: zoom
+    };
+}; 
+
+// Helper function to convert DMS to Decimal
+const dmsToDecimal = (deg, min, sec, cp) => {
+    let decimal = deg + (min / 60) + (sec / 3600);
+    if (cp === 'S' || cp === 'W') {
+        decimal *= -1;
+    }
+    return decimal;
+};
+
+// Helper function to convert log events to nodes
+const logEventsToNodes = (logEvents) => {
+
+    // Create a map of the latest node data
+    const latestNodes = {};
+
+    // Loop through the log events and update the latest node data
+    logEvents.forEach((event) => {
+
+        // Calculate the latitude and longitude
+        const latitude = dmsToDecimal(event.latDeg, event.latMin, event.latSec, event.latCP);
+        const longitude = dmsToDecimal(event.lonDeg, event.lonMin, event.lonSec, event.lonCP);
+
+        // Update the latest node data
+        latestNodes[event.nodeId] = {
+            id: event.nodeId,
+            latitude: latitude,
+            longitude: longitude,
+            label: `Device ${event.nodeId}`,
+            detectionType: event.detectionType,
+        };
+    });
+
+    // Return the latest node data
+    return Object.values(latestNodes);
+};
+
+// Simple Card Component to show large number in center and subtitle below
+function SimpleCard({ number, subtitle, link, ...props }) {
+
     return (
-        <Card sx={{  }}>
-            <CardContent>
-                <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
-                    This is some dummy text
+        <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+            <CardContent sx={{ flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <Typography component="p" variant="h3">
+                    {number}
                 </Typography>
-                <Typography variant="h5" component="div">
-                    Title to this card
+                <Typography variant="h6" color="text.secondary" component={Link} to={link} sx={{ mt: 1 }}>
+                    {subtitle}
                 </Typography>
-                <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                    Need to figure out what to put here
-                </Typography>
-                <Typography variant="body2">
-                    This card should contain some information about the current status of the system.
-                </Typography>
+                {/* <Box sx={{mt: 2}}>
+                    <Link color="primary" href="#" onClick={preventDefault}>
+                        View balance
+                    </Link>
+                </Box> */}
             </CardContent>
-            <CardActions>
-                <Button size="small">Learn More</Button>
-            </CardActions>
         </Card>
     );
 }
 
+// Custom Marker Component
+const CustomMarker = ({ onClick, label }) => {
+    const [keyframesName, setKeyframesName] = useState(null);
 
-// Map Component
-function MapCard() {
+    useEffect(() => {
+        const pulsingKeyframes = `
+        @keyframes pulsing {
+          0% {
+            box-shadow: 0 0 0 0 rgba(63, 81, 181, 0.4);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(63, 81, 181, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(63, 81, 181, 0);
+          }
+        }
+      `;
 
-    // Define position for map center
-    const position_boston_ma = [42.3584, -71.0598];
-    const position_woburn_ma = [42.4793, -71.1523];
-    const position_lowell_ma = [42.6334, -71.3162];
-    
-    // Create a custom marker with MUI star icon
-    // const starIcon = new L.icon({
-    //     iconUrl: <SvgIcon component={StarIcon} />,
-    //     iconSize: [30, 30],
-    // });
+        const styleEl = document.createElement("style");
+        document.head.appendChild(styleEl);
+
+        styleEl.sheet.insertRule(pulsingKeyframes, 0);
+
+        setKeyframesName("pulsing");
+
+        return () => {
+            document.head.removeChild(styleEl);
+        };
+    }, []);
 
     return (
-        <Card sx={{ height: 500, }}>
-            <MapContainer center={position_boston_ma} zoom={10}  style={{ height: "100%", width: "100%" }}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
-                />
-                {/* Add any other components you want to display on the map */}
-                <MarkerLayer>
-                    <Marker position={position_boston_ma}>
-                        <img alt="Example image" width={25} height={41} src={markerIcon} />
-                    </Marker>
-                    <Marker position={position_woburn_ma}>
-                        <img alt="Example image" width={25} height={41} src={markerIcon} />
-                    </Marker>
-                    <Marker position={position_lowell_ma}>
-                        <img alt="Example image" width={25} height={41} src={markerIcon} />
-                    </Marker>
-                </MarkerLayer>
-            </MapContainer>
-        </Card>
+        <Box
+            sx={{
+                position: 'relative',
+                cursor: 'pointer',
+            }}
+            onClick={onClick}
+        >
+            <Box sx={{
+                backgroundColor: "#3f51b5",
+                borderRadius: "50%",
+                width: "25px",
+                height: "25px",
+                boxShadow: "0 0 2px #3f51b5",
+                zIndex: 2,
+            }} />
+            <Box sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                backgroundColor: "transparent",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                boxShadow: "0 0 5px #3f51b5",
+                zIndex: 1,
+                animation: `${keyframesName} 1.5s infinite`,
+            }} />
+        </Box>
     );
-}
-  
+};
 
+// Dashboard Map
 export default function Dashboard() {
 
-    const position = [51.505, -0.09]
+    const mapRef = useRef(null);
+
+    // Data Store
+    const { logEvents, setLogEvents } = React.useContext(DataStoreContext);
+    const { deviceList, setDeviceList } = React.useContext(DataStoreContext);
+
+    // Local States
+    const [selectedNode, setSelectedNode] = useState(null);
+    const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+    // Local Variables
+    const nodes = logEventsToNodes(logEvents);    
+    const initialViewState = calculateInitialViewState(nodes, 800, 500); // Replace 800 and 500 with your map's width and height.
+
+    // console.log("initialViewState: ", initialViewState);
+
+    const flyToNode = (latitude, longitude, zoom) => {
+        if (isMapLoaded) {
+            const map = mapRef.current?.getMap();
     
-
-    // const Item = >;
-
+            if (map) {
+                map.flyTo({
+                    center: [longitude, latitude],
+                    zoom: zoom,
+                    essential: true,
+                    speed: 0.8,
+                    curve: 1.42,
+                });
+            }
+        } else {
+            console.log("Map not loaded");
+        }
+    };
+    
     return (
         <Grid container spacing={4} alignItems="stretch" >
+
+            {/* Map */}
             <Grid xs={12} md={8}>
-                <MapCard/>
+                <Card sx={{ height: 500, }}>
+                    <MapProvider>
+                        <>
+                            <Map
+                                ref={mapRef}
+                                mapStyle="https://raw.githubusercontent.com/hc-oss/maplibre-gl-styles/master/styles/osm-mapnik/v8/default.json"
+                                mapLib={maplibregl}
+                                attributionControl={false}
+                                renderWorldCopies={false}
+                                maxPitch={0}
+                                dragRotate={true}
+                                touchZoomRotate={true}
+                                onLoad={() => setIsMapLoaded(true)}
+                                initialViewState={initialViewState}
+                            >
+
+                                {/* Plot the Map points */}
+                                {nodes.map((node) => (
+                                    <Marker key={node.id} latitude={node.latitude} longitude={node.longitude}>
+                                        <Typography
+                                            sx={{
+                                                position: 'absolute',
+                                                top: '-20px',
+                                                left: '50%',
+                                                transform: 'translateX(-20%)',
+                                                color: 'text.secondary',
+                                                fontWeight: 'bold',
+                                                fontSize: '0.90rem',
+                                                width: '150px',
+                                            }}>
+                                            {node.label}
+                                        </Typography>
+                                        <CustomMarker onClick={(e) => { e.preventDefault(); setSelectedNode(node); }} />
+                                    </Marker>
+                                ))}
+
+                                {selectedNode && (
+                                    <Popup
+                                        latitude={selectedNode.latitude}
+                                        longitude={selectedNode.longitude}
+                                        onClose={() => {
+                                            setSelectedNode(null);
+                                        }}
+                                        closeOnClick={false}
+                                        offsetTop={-15}
+                                        anchor="top"
+                                    >
+                                        <div>{selectedNode.label}</div>
+                                    </Popup>
+                                )}
+
+                                <NavigationControl
+                                    showCompass={true} // Set to true if you want to show the compass
+                                    position="top-right" // Set the position of the control on the map
+                                />
+
+                                <GeolocateControl
+                                    position="top-right" // Set the position of the control on the map
+                                    fitBoundsOptions={{ maxZoom: 15 }} // Set the maximum zoom level when the map is centered on the user's location
+                                    trackUserLocation // Enable tracking of the user's location
+                                    auto
+                                />
+                            </Map>
+                        </>
+                    </MapProvider>
+                </Card>
             </Grid>
+
+            {/* Device List */}
             <Grid xs={12} md={4}>
                 <Card sx={{ height: 500, }}>
                     <CardContent>
-                        <Typography gutterBottom variant="h5" component="div">
-                            Notifications
-                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="h6" color="text.primary" gutterBottom>
+                                Device List
+                            </Typography>
+                            <Button 
+                                variant="outlined" 
+                                size="small" 
+                                onClick={() => {
+                                    flyToNode(initialViewState.latitude, initialViewState.longitude, initialViewState.zoom);
+                                }}
+                            >
+                                Reset View
+                            </Button>
+                        </Box>
                         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-                            <ListItem>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <BatteryAlertIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary="Node 1: Low Battery Warning" secondary="Jan 9, 2014" />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <HelpIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary="Node: 3: Lost Connection" secondary="Jan 7, 2014" />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <NotificationImportantIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary="Node 2: Human Activity Detected" secondary="July 20, 2014" />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <NotificationImportantIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary="Node 4: Vehicular Activity Detected" secondary="July 20, 2014" />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemAvatar>
-                                    <Avatar>
-                                        <NotificationImportantIcon />
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary="Node 5: Earthquake Detected" secondary="July 20, 2014" />
-                            </ListItem>
+                            {nodes.map((node) => (
+                                <ListItem
+                                    key={node.id}
+                                    button
+                                    onClick={() => {
+                                        setSelectedNode(node);
+                                        flyToNode(node.latitude, node.longitude, 15);
+                                    }}                                
+                                >
+                                    <ListItemAvatar><Avatar><DeviceHubIcon/></Avatar></ListItemAvatar>
+                                    <ListItemText primary={`Device ${node.id}`} />
+                                </ListItem>
+                            ))}
                         </List>
                     </CardContent>
                 </Card>
             </Grid>
+
+            {/* Device Status */}
             <Grid xs={12} md={4}>
-                <BasicCard/>
+                <SimpleCard number={deviceList.length} subtitle={"Connected Devices"} link="/devices" />
             </Grid>
             <Grid xs={12} md={4}>
-                <BasicCard/>
+                <SimpleCard number={nodes.length} subtitle={"Discovered Devices"} link="/notification" />
             </Grid>
             <Grid xs={12} md={4}>
-                <BasicCard/>
+                <SimpleCard number={logEvents.length} subtitle={"Detection Events"} link="/notification" />
             </Grid>
         </Grid>
     );
 }
-
-// // Dashboard Component
-// export default function Dashboard() {
-//     return (
-//         <Grid container spacing={2}>
-//             <Grid item xs={12} md={8}>
-                // <Card>
-                //     <CardContent>
-                        
-                //     </CardContent>
-                // </Card>
-//             </Grid>
-//             <Grid item xs={12} md={4}>
-//                 <Card>
-//                     <CardContent>
-//                         hello
-//                     </CardContent>
-//                 </Card>
-//             </Grid>
-//             <Grid item xs={12}>
-//                 <Card>
-//                     hello
-//                 </Card>
-//             </Grid>
-//         </Grid>
-//     );
-// }
