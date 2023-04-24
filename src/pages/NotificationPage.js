@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import MaterialReactTable from 'material-react-table';
 import { useSnackbar } from 'notistack';
 import { ExportToCsv } from 'export-to-csv';
+import CSVReader from 'react-csv-reader';
 
 // Material UI
 import { createTheme, ThemeProvider, useTheme } from '@mui/material';
@@ -13,9 +14,15 @@ import Typography from '@mui/material/Typography';
 
 // Material UI Icons
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ImportExportIcon from '@mui/icons-material/ImportExport';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 
 // Local
-import { DataStoreContext } from '../dataStore';
+import { DataStoreContext, canAddLogEvent } from '../dataStore';
 
 
 
@@ -132,6 +139,70 @@ export default function Notification() {
         enqueueSnackbar('All notifications deleted!', { variant: 'warning', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
     };
 
+    // Handle Import Button
+    const handleCsvData = (data) => {
+        const newLogEvents = data.slice(1).map((row) => {
+            const [
+                nodeNum,
+                dateTime,
+                detectionType,
+                gpsData,
+            ] = row;
+
+            // Check if the row is valid
+            if (!gpsData) return null;
+
+            // Parse date and time
+            const time = dateTime.split(' ')[1];
+            const seconds = parseInt(time.split(':')[2]);
+
+            // Parse GPS data
+            const [lat, lon] = gpsData.split(',').map((coord) => coord.trim());
+            const latMatch = lat.match(/(\d+)°(\d+)'(\d+(?:\.\d+)?)\"([NS])/);
+            const lonMatch = lon.match(/(\d+)°(\d+)'(\d+(?:\.\d+)?)\"([EW])/);
+
+            // Check if the GPS data is valid
+            if (!latMatch || !lonMatch) {
+                enqueueSnackbar('Invalid GPS data format in the CSV file', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
+                return null;
+            }
+
+            // Parse the GPS data
+            const [_, latDeg, latMin, latSec, latCP] = latMatch;
+            const [__, lonDeg, lonMin, lonSec, lonCP] = lonMatch;
+
+            // Return the parsed data
+            return {
+                nodeId: parseInt(nodeNum),
+                detectionType: detectionType === 'Seismic Activity Detected' ? 'S' : 'V',
+                year: parseInt(dateTime.substring(0, 4)),
+                month: parseInt(dateTime.substring(5, 6)),
+                day: parseInt(dateTime.substring(8, 9)),
+                hour: parseInt(dateTime.substring(11, 13)),
+                minute: parseInt(dateTime.substring(14, 16)),
+                second: parseInt(seconds),
+                latDeg: parseInt(latDeg),
+                latMin: parseInt(latMin),
+                latSec: parseFloat(latSec),
+                latCP: latCP,
+                lonDeg: parseInt(lonDeg),
+                lonMin: parseInt(lonMin),
+                lonSec: parseFloat(lonSec),
+                lonCP: lonCP,
+            };
+        }).filter(event => event !== null);
+
+        // Update the notifications
+        const newFilteredLogEvents = newLogEvents.filter((log) => canAddLogEvent(logEvents, log) && log);
+
+        // Increment the notifications
+        setNotifications((prevNotifications) => prevNotifications + newFilteredLogEvents.length);
+
+        // Add the new log events to the existing log events
+        setLogEvents((prevLogEvents) => [...prevLogEvents, ...newFilteredLogEvents]);
+
+    };
+
     return (
         <Box sx={{}}>
             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, }}>
@@ -147,8 +218,13 @@ export default function Notification() {
                     renderTopToolbarCustomActions={({ table }) => (
                         <Box sx={{ display: 'flex', gap: '1rem', p: '0.5rem', flexWrap: 'wrap' }}>
 
-                            {/*  */}
-                            <Button variant="outlined" color="primary" onClick={handleReadNotifications}>
+                            {/* Mark all read */}
+                            <Button 
+                                variant="outlined" 
+                                color="primary" 
+                                onClick={handleReadNotifications} 
+                                startIcon={<NotificationsActiveIcon />}
+                            >
                                 Mark All Read
                             </Button>
 
@@ -159,7 +235,7 @@ export default function Notification() {
                                 onClick={handleExportData}
                                 startIcon={<FileDownloadIcon />}
                             >
-                                Export All Data
+                                Export
                             </Button>
 
                             {/* <Button
@@ -184,8 +260,23 @@ export default function Notification() {
                                 Export Selected Rows
                             </Button> */}
 
+                            {/* Import CSV file */}
+                            <label htmlFor="csv-input">
+                                <Button variant="outlined" color="primary" component="span" startIcon={<FileUploadIcon />}>
+                                    Import
+                                </Button>
+                            </label>
+                            <CSVReader
+                                cssClass="csv-input"
+                                onFileLoaded={handleCsvData}
+                                onError={(err) => enqueueSnackbar(`Error uploading CSV file: ${err}`, { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } })}
+                                parserOptions={{ header: false }}
+                                inputId="csv-input"
+                                inputStyle={{ display: 'none' }}
+                            />
+                            
                             {/* Delete all data */}
-                            <Button variant="outlined" color="error" onClick={handleDeleteAll}>
+                            <Button variant="outlined" color="error" onClick={handleDeleteAll} startIcon={<DeleteIcon />}>
                                 Delete All
                             </Button>
 

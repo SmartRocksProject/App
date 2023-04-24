@@ -48,8 +48,6 @@ export default function DevicesPage() {
         setOpenDeviceDialog(true);
     };
 
-    console.log(deviceList);
-
     // Connect to the device
     const handleConnect = async (device, index) => {
 
@@ -90,19 +88,6 @@ export default function DevicesPage() {
                 return newDevices;
             });
 
-            // // Subscribe config packets
-            // connection.events.onConfigPacket.subscribe(function (config) {
-            //     device.setConfig(config);
-            //     console.log("Config set!", config.payloadVariant.value);
-            //     console.log(device);
-            // });
-
-            // // Subscribe module config packets
-            // connection.events.onModuleConfigPacket.subscribe(function (moduleConfig) {
-            //     device.setModuleConfig(moduleConfig);
-            //     console.log("Module config set!", moduleConfig);
-            // });
-
             // Open the snackbar
             enqueueSnackbar('The device has successfully connected!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
 
@@ -120,52 +105,7 @@ export default function DevicesPage() {
         if (activeConnection) {
 
             // Open the update settings dialog
-            setOpenUpdateSettingsDialog(true);
-
-            // Get the device
-            const device = activeConnection;
-
-            // Create the protobuf object
-            const loraConfig = new Protobuf.Config_LoRaConfig({
-                usePreset: true, // true to use a preset, false to use custom settings
-                // modemPreset: Protobuf.Config_LoRaConfig_ModemPreset.Bw125Cr45Sf128, // a preset from the available ModemPreset values
-                region: Protobuf.Config_LoRaConfig_RegionCode.US, // a region from the available RegionCode values
-                // other properties if needed
-            });
-
-            const channelSet = new Protobuf.ChannelSet({
-                settings: [], // an array of channel settings (Protobuf.ChannelSettings objects)
-                loraConfig: loraConfig, // the loraConfig object created in step 2
-            });              
-
-            // // Attempt to set the config on the device 
-            // try {
-                
-            //     // Set the config
-            //     await device.setConfig(
-            //         new Protobuf.Config({
-            //             payloadVariant: {
-            //                 case: "lora",
-            //                 value: loraConfig
-            //             }
-            //         })
-            //     );
-                
-            //     // Commit config
-            //     await device.commitEditSettings();
-
-            //     console.log('Config set!');
-
-            //     // Open the snackbar
-            //     enqueueSnackbar('The device has successfully updated!', { variant: 'success', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
-
-            // } catch (error) {
-                 
-            //     // Show the error
-            //     console.error('Failed to set config:', error);
-            //     enqueueSnackbar('Failed to update the device!', { variant: 'error', anchorOrigin: { vertical: 'top', horizontal: 'center', } });
-            // }
-
+            setOpenUpdateSettingsDialog(true);           
 
         } else {
             
