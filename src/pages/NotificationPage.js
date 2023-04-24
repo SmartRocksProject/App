@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import MaterialReactTable from 'material-react-table';
 import { useSnackbar } from 'notistack';
+import { ExportToCsv } from 'export-to-csv';
 
 // Material UI
 import { createTheme, ThemeProvider, useTheme } from '@mui/material';
@@ -10,8 +11,12 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
+// Material UI Icons
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
 // Local
 import { DataStoreContext } from '../dataStore';
+
 
 
 // Notifcation Page Component
@@ -92,6 +97,29 @@ export default function Notification() {
         };
     }
 
+    // Export Data
+    const csvOptions = {
+        fieldSeparator: ',',
+        quoteStrings: '"',
+        decimalSeparator: '.',
+        showLabels: true,
+        useBom: true,
+        useKeysAsHeaders: false,
+        headers: columns.map((c) => c.header),
+    };
+
+    const csvExporter = new ExportToCsv(csvOptions);
+
+    // Handle Export Buttons
+    const handleExportRows = (rows) => {
+        csvExporter.generateCsv(rows.map((row) => row.original));
+    };
+
+    // Handle Export All Data Button
+    const handleExportData = () => {
+        csvExporter.generateCsv(TableLogEvents);
+    };
+
     // Handle Read Notifications Button
     const handleReadNotifications = () => {
         setNotifications(0);
@@ -108,12 +136,6 @@ export default function Notification() {
         <Box sx={{}}>
             <Box sx={{ display: 'flex', alignItems: 'center', p: 2, }}>
                 <Typography variant="h5" sx={{flexGrow: 1}}>Notifications</Typography>
-                <Button variant="outlined" color="primary" onClick={handleReadNotifications} sx={{ mx: 2, }}>
-                    Mark All Read
-                </Button>
-                <Button variant="outlined" color="error" onClick={handleDeleteAll}>
-                    Delete All
-                </Button>
             </Box>
             <ThemeProvider theme={darkMode ? darkTableTheme : lightTableTheme }>
                 <MaterialReactTable
@@ -122,6 +144,53 @@ export default function Notification() {
                     enableRowSelection
                     enableColumnOrdering
                     enablePinning
+                    renderTopToolbarCustomActions={({ table }) => (
+                        <Box sx={{ display: 'flex', gap: '1rem', p: '0.5rem', flexWrap: 'wrap' }}>
+
+                            {/*  */}
+                            <Button variant="outlined" color="primary" onClick={handleReadNotifications}>
+                                Mark All Read
+                            </Button>
+
+                            {/* Export all data that is currently in the table (ignore pagination, sorting, filtering, etc.) */}
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={handleExportData}
+                                startIcon={<FileDownloadIcon />}
+                            >
+                                Export All Data
+                            </Button>
+
+                            {/* <Button
+                                disabled={table.getPrePaginationRowModel().rows.length === 0}
+                                //export all rows, including from the next page, (still respects filtering and sorting)
+                                onClick={() =>
+                                    handleExportRows(table.getPrePaginationRowModel().rows)
+                                }
+                                startIcon={<FileDownloadIcon />}
+                                variant="contained"
+                            >
+                                Export All Rows
+                            </Button> */}
+
+                            {/* Export only selected rows */}
+                            {/* <Button
+                                disabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
+                                onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
+                                startIcon={<FileDownloadIcon />}
+                                variant="contained"
+                            >
+                                Export Selected Rows
+                            </Button> */}
+
+                            {/* Delete all data */}
+                            <Button variant="outlined" color="error" onClick={handleDeleteAll}>
+                                Delete All
+                            </Button>
+
+                        </Box>
+                    )}
                 />
             </ThemeProvider>
         </Box>
