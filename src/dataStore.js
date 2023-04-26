@@ -213,7 +213,12 @@ export function getTime(log) {
 
 // Helper function to create a LogEvent object
 export function processLogLine(line) {
-    const parts = line.split(' ');
+
+    // Remove Carriage Return characters and other non-alphanumeric characters   
+    const sanitizedLine = line.replace(/[^0-9a-zA-Z ]/g, ' ');
+
+    // Split the line into parts
+    const parts = sanitizedLine.split(' ');
 
     return {
         ...LogEvent,
