@@ -215,7 +215,8 @@ export function getTime(log) {
 export function processLogLine(line) {
 
     // Remove Carriage Return characters and other non-alphanumeric characters   
-    const sanitizedLine = line.replace(/[^0-9a-zA-Z ]/g, ' ');
+    const sanitizedLine = line.replace(/[^0-9a-zA-Z ]/g, '');
+    console.log("Parsing Sanitized Log line: ", sanitizedLine);
 
     // Split the line into parts
     const parts = sanitizedLine.split(' ');
