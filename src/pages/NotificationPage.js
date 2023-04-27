@@ -22,7 +22,7 @@ import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 
 // Local
-import { DataStoreContext, canAddLogEvent } from '../dataStore';
+import { DataStoreContext, getTime, displayGPS, displayMessageType, canAddLogEvent } from '../dataStore';
 
 
 
@@ -98,9 +98,9 @@ export default function Notification() {
     for (let i = 0; i < logEvents.length; i++) {
         TableLogEvents[i] = {
             nodeNum: logEvents[i].nodeId,
-            dateTime: `${logEvents[i].year}-${logEvents[i].month}-${logEvents[i].day} ${logEvents[i].hour}:${logEvents[i].minute}:${logEvents[i].second}`,
-            detectionType: getDetectionName(logEvents[i].detectionType),
-            gpsData: `${logEvents[i].latDeg}°${logEvents[i].latMin}'${logEvents[i].latSec}"${logEvents[i].latCP}, ${logEvents[i].lonDeg}°${logEvents[i].lonMin}'${logEvents[i].lonSec}"${logEvents[i].lonCP}`,
+            dateTime: getTime(logEvents[i]),
+            detectionType: displayMessageType(logEvents[i]),
+            gpsData: displayGPS(logEvents[i]),
         };
     }
 
