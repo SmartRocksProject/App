@@ -191,7 +191,7 @@ export function displayMessageType(log) {
     if (log.detectionType === 'S') {
         return "Seismic Event Detected (S)";
     } else if (log.detectionType === 'V') {
-        return "Vibration Event Detected (V)";
+        return "Vocal Event Detected (V)";
     } else {
         return "No Event Detected";
     }
